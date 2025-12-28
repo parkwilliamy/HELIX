@@ -4,7 +4,7 @@
 - R500 is 100% compliant with the RV32I ISA based on the official RISC-V compliance test suite (see below for more details)
 - R500 has an average CPI of 1.23*, branch predictor accuracy of 96.5%**, and a throughput of 46.3 million instructions per second* with a clock speed of 57MHz
 - Implemented on the Xilinx Artix-7 FPGA with 20KB of instruction memory and 12KB of data memory
-- Utilizes a 5-stage pipeline with data forwarding, stalling, flushing, and global branch prediction
+- Utilizes a 5-stage pipeline with forwarding, stalling, flushing, and global branch prediction
 - Designed a 2-way set associative branch target buffer to eliminate penalties for correctly predicted branch instructions
 
 **Average CPI and throughput were calculated on the average results of loop1.c, loop2.c, loop3.c, loop4.c, loop5.c, fib.c, and mem2.c*
@@ -58,7 +58,7 @@ The R500's global branch predictor uses gshare indexing, which uses both the PC 
 ### MemAccess
 - The MemAccess module directly interacts with RAM 
 - Packs received bytes into message frames, which then correspond to a read or write operation
-- Unpacks data words into bytes to be sent over UART (for read operations)
+- Unpacks RAM data words into bytes to be sent over UART (for read operations)
 
 ## Memory Interface
 - Memory is in the form of True Dual-Port BRAM
@@ -95,11 +95,11 @@ NOTE: Write enable bits select which bytes in a word to write (i.e., we = 0010 w
 ## Verification
 NOTE: Testbench files are in the pipelined branch in tb/
 
-- Wrote testbenches in SystemVerilog that implemented constraint random verification along with directed tests
+- Wrote testbenches in SystemVerilog that implemented constraint random verification and directed tests
 - Debugged waveforms with Vivado's xsim tool
 - Wrote a shell script to simplify compilation, elaboration, and simulation into one command
 - Utilized Verilator to quickly compile tests that required large amounts of memory (1MB+)
-- For more system-wide tests, I wrote assembly and C programs to test basic instructions as well as hazards
+- For more system-wide tests, I wrote Assembly and C programs to test basic instructions as well as hazards
 
 ## Performance Testing
 
@@ -107,11 +107,11 @@ NOTE: Performance tests located in metric_tests/tests
 - These tests are only meant to give a reasonable estimate of the R500's performance
 
 ### Loop Tests
-- loop1.c tests a basic for loop to provide a baseline for performance 
+- loop1.c tests a basic for loop to provide a baseline for predictor performance 
 - loop2.c tests an alternating loop (i.e., branch not taken, branch taken) to test the predictor's ability to recognize a simple pattern
 - loop3.c tests a condition based on divisibility by 2,3, or 5 for a large range of numbers; this test provides a more difficult pattern for the predictor
 - loop4.c tests a "3 out of 4 taken" pattern; similar to loop3.c, this test provides a moderately difficult pattern to stress test the predictor
-- loop5.c tests correlation between 2 branches, provides a different type of pattern from the previous ones to see how to predictor adapts to it
+- loop5.c tests correlation between 2 branches, providing a different type of pattern from the previous ones to see how the predictor adapts to it
   
 | Test     | loop1.c | loop2.c | loop3.c | loop4.c | loop5.c | 
 |:----------:|:----------:|:----------:|:----------:|:----------:|:----------:|
@@ -119,8 +119,8 @@ NOTE: Performance tests located in metric_tests/tests
 | Accuracy  | 99.9%  | 99.9%  | 99.3%  | 99.9%  | 83.3%  |
 
 ### General Tests
-- fib.c tests recursion and processors' ability to handle multiple stack frames
-- mem2.c stress tests the processors' load and store instructions
+- fib.c tests recursion and the processor's ability to handle multiple stack frames
+- mem2.c stress tests the processor's load and store instructions
 
 | Test | fib.c | mem2.c |
 |:----:|:----:|:----:|
