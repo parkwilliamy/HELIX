@@ -14,6 +14,7 @@
 ## Repository Structure
 - rtl/ contains Verilog files
 - tb/ contains SystemVerilog testbenches
+- metric_tests/ contains the performance benchmark programs
 - main branch only has the files for the synthesized R500
 - pipelined branch has both the files for the simulated R500 and testbenches
 - single_cycle branch has the files for the simulated single cycle R500 and testbenches (this was the original version before I pipelined the design)
