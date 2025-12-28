@@ -12,9 +12,11 @@
 ***Average branch predictor accuracy was calculated on the average result of loop1.c, loop2.c, loop3.c, loop4.c, loop5.c*
 
 ## Repository Structure
+### Directories
 - rtl/ contains Verilog files
-- tb/ contains SystemVerilog testbenches
+- tb/ contains SystemVerilog testbenches (not available in main branch)
 - metric_tests/ contains the performance benchmark programs
+### Branches
 - main branch only has the files for the synthesized R500
 - pipelined branch has both the files for the simulated R500 and testbenches
 - single_cycle branch has the files for the simulated single cycle R500 and testbenches (this was the original version before I pipelined the design)
