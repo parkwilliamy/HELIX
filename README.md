@@ -36,8 +36,6 @@ addi x1, x1, 3  # x1 = x1 + 3
 addi x1, x1, 4  # x1 = x1 + 4 <--- In this case, this instruction must prioritize the data forwarded from the instruction immediately before it, since there is a conflict with the first instruction's x1 data as well
 ```
 
-- The Stall Unit handles load-use hazards by inserting a single cycle NOP instruction into the pipeline 
-
 ### Branch Prediction
 The R500's global branch predictor uses gshare indexing, which uses both the PC and global prediction history to map a branch instruction to a prediction
 
