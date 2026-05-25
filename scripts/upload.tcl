@@ -1,0 +1,1 @@
+# This script enables users to upload the CPU bitstream onto their FPGA

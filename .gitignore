@@ -6,6 +6,8 @@
 *.pb
 *.wdb
 *.vcd
+*.dcp
+dfx_runtime.txt
 
 # Vivado database
 .cache/
