@@ -1,1 +1,0 @@
-# This script is used to lint and elaborate RTL designs for functional simulation

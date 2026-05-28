@@ -14,8 +14,9 @@ dfx_runtime.txt
 .hw/
 .ip_user_files/
 .sim/
-.xil/
+.Xil/
 .gen/
+.srcs/
 xvlog*
 xelab*
 xsim*

@@ -1,0 +1,1 @@
+# This script is used to lint and elaborate RTL designs for pre-synthesis functional simulation
