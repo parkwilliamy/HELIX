@@ -1,22 +1,24 @@
 `timescale 1ns/1ps
 
+import constants::*;
+
 module WriteBack (
-    input [31:0] ALU_result, pc_imm, pc_4,
-    input [2:0] funct3,
-    input [1:0] RegSrc,
-    input [31:0] DMEM_word,
-    output reg [31:0] rd_write_data
+    input logic [XLEN-1:0] ALU_result, pc_imm, pc_4,
+    input logic [2:0] funct3,
+    input logic [1:0] RegSrc,
+    input logic [XLEN-1:0] DMEM_word,
+    output logic [XLEN-1:0] rd_write_data
 );
 
-    wire [1:0] byte_offset;
-    assign byte_offset = ALU_result % 4; // ALU_result is addrb (calculated addr)
+    logic [1:0] byte_offset;
+    assign byte_offset = ALU_result[1:0]; // ALU_result is addrb (calculated addr)
 
-    wire [31:0] DMEM_shifted_word; 
+    logic [XLEN-1:0] DMEM_shifted_word; 
     assign DMEM_shifted_word = DMEM_word >> 8*byte_offset;
 
-    reg [31:0] DMEM_result;
+    logic [XLEN-1:0] DMEM_result;
 
-    always @ (*) begin
+    always_comb begin
     
         DMEM_result = 32'b0;
 
@@ -27,6 +29,7 @@ module WriteBack (
             3'b010: DMEM_result = DMEM_shifted_word; // LW
             3'b100: DMEM_result = {24'b0, DMEM_shifted_word[7:0]}; // LBU
             3'b101: DMEM_result = {16'b0, DMEM_shifted_word[15:0]}; // LHU
+            default: DMEM_result = 'x;
 
         endcase
 
@@ -36,6 +39,7 @@ module WriteBack (
             1: rd_write_data = DMEM_result;
             2: rd_write_data = pc_imm;
             3: rd_write_data = pc_4;
+            default: rd_write_data = 'x;
 
         endcase
 

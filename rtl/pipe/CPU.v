@@ -201,7 +201,7 @@ module CPU (
     );
 
     ALUControl INST5 (
-        .funct7(ID_funct7), 
+        .sub_bit(ID_funct7[5]), 
         .funct3(ID_funct3), 
         .ALUOp(ID_ALUOp), 
         .regbit(ID_opcode[5]), 
@@ -358,9 +358,11 @@ module CPU (
         .MEM_rs2(MEM_rs2_wire),
         .MEM_rd(MEM_rd_wire), 
         .WB_rd(WB_rd_wire),
-        .EX_ValidReg(EX_ValidReg_wire), 
-        .MEM_ValidReg(MEM_ValidReg_wire), 
-        .WB_ValidReg(WB_ValidReg_wire),
+        .EX_rs1_valid(EX_ValidReg_wire[1]),
+        .EX_rd_valid(EX_ValidReg_wire[2]),
+        .MEM_rs2_valid(MEM_ValidReg_wire[0]),
+        .MEM_rd_valid(MEM_ValidReg_wire[2]),
+        .WB_rs2_valid(WB_ValidReg_wire[0]),
         .MEM_MemRead(MEM_MemRead_wire),
         .MEM_MemWrite(MEM_MemWrite_wire),
         .WB_MemRead(WB_MemRead_wire),
@@ -390,7 +392,8 @@ module CPU (
         .EX_rd(EX_rd_wire),
         .ID_rs1(ID_rs1),
         .ID_rs2(ID_rs2),
-        .ID_ValidReg(ID_ValidReg),
+        .ID_rs1_valid(ID_ValidReg[1]),
+        .ID_rd_valid(ID_ValidReg[2]),
         .Stall(ID_Stall)
     );
 

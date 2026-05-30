@@ -1,10 +1,12 @@
 `timescale 1ns/1ps
 
+import constants::*;
+
 module ControlUnit (
-    input [6:0] opcode,
-    output reg [2:0] ValidReg,
-    output reg [1:0] ALUOp, RegSrc,
-    output reg ALUSrc, RegWrite, MemRead, MemWrite, Branch, Jump, Valid
+    input logic [6:0] opcode,
+    output logic [2:0] ValidReg,
+    output logic [1:0] ALUOp, RegSrc,
+    output logic ALUSrc, RegWrite, MemRead, MemWrite, Branch, Jump, Valid
     // ValidReg: {rs2, rs1, rd} are valid registers (validity is determined by instruction type, for example, only rs1 and rs2 valid in B-type instructions)
     // ALUOp: 0 -> Decode regbit, funct3 and funct7 in ALUControl, 1 -> ADD, 2 -> SUB
     // RegSrc: 0 -> ALU result, 1 -> data memory, 2 -> pc-imm adder, 3 -> next instruction address (pc+4)
@@ -17,19 +19,7 @@ module ControlUnit (
     // Valid: 0 -> Instruction is not in RV32I, 1 -> instruction is in RV32I
 );
 
-    localparam [6:0] // Opcodes for different instruction types
-        OP_R = 7'b0110011,
-        OP_I = 7'b0010011,
-        OP_I_LD = 7'b0000011,
-        OP_I_FENCE = 7'b0001111,
-        OP_I_JALR = 7'b1100111,
-        OP_S = 7'b0100011,
-        OP_B = 7'b1100011,
-        OP_U_LUI = 7'b0110111,
-        OP_U_AUIPC = 7'b0010111,
-        OP_J = 7'b1101111;
-
-    always @(*) begin
+    always_latch begin
 
         ALUOp = 0;
         RegSrc = 0;
@@ -125,9 +115,15 @@ module ControlUnit (
 
             default: begin
 
-                RegWrite = 0;
-                ValidReg = 0;
-                Valid = 0;
+                ALUOp = 'x;
+                RegSrc = 'x;
+                ALUSrc = 'x;
+                RegWrite = 'x;
+                MemRead = 'x;
+                MemWrite = 'x;
+                Branch = 'x;
+                Jump = 'x;
+                Valid = 'x;
 
             end
             

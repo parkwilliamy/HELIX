@@ -1,17 +1,19 @@
 `timescale 1ns/1ps
 
+import constants::*;
+
 module Fetch (
-    input [1:0] IF_branch_prediction, ID_branch_prediction, prediction_status, 
-    input IF_BTBhit, ID_BTBhit, IF_Branch, IF_Jump, ID_Branch, EX_Branch, ID_Jump, EX_Jump, ID_ALUSrc, EX_ALUSrc,
-    input [31:0] IF_pc, IF_pc_imm, EX_pc_4, ID_pc_imm, EX_pc_imm, rs1_imm,
-    output [31:0] IF_pc_4,
-    output reg [31:0] next_pc,
-    output reg ID_Flush, EX_Flush
+    input logic [1:0] IF_branch_prediction, ID_branch_prediction, prediction_status, 
+    input logic IF_BTBhit, ID_BTBhit, IF_Branch, IF_Jump, ID_Branch, EX_Branch, ID_Jump, EX_Jump, ID_ALUSrc, EX_ALUSrc,
+    input logic [XLEN-1:0] IF_pc, IF_pc_imm, EX_pc_4, ID_pc_imm, EX_pc_imm, rs1_imm,
+    output logic [XLEN-1:0] IF_pc_4,
+    output logic [XLEN-1:0] next_pc,
+    output logic ID_Flush, EX_Flush
 );
 
     assign IF_pc_4 = IF_pc+4; // This result is computed once in IF and used later in the pipeline if needed
 
-    always @ (*) begin
+    always_comb begin
 
         ID_Flush = 0;
         EX_Flush = 0;
@@ -23,7 +25,7 @@ module Fetch (
 
             if (IF_Branch) begin // Conditional branch based on prediction
 
-                if (IF_branch_prediction == 2'b10 || IF_branch_prediction == 2'b11) next_pc = IF_pc_imm;
+                if (IF_branch_prediction == weak_taken || IF_branch_prediction == strong_taken) next_pc = IF_pc_imm;
 
             end
 
@@ -37,7 +39,7 @@ module Fetch (
 
             if (ID_Branch) begin
 
-                if (ID_branch_prediction == 2'b10 || ID_branch_prediction == 2'b11) begin
+                if (ID_branch_prediction == weak_taken || ID_branch_prediction == strong_taken) begin
 
                     next_pc = ID_pc_imm;
                     ID_Flush = 1; // 1 cycle penalty for ID branches
@@ -64,7 +66,7 @@ module Fetch (
 
             case (prediction_status)
 
-                0: begin
+                NT_T: begin
 
                     next_pc = EX_pc_imm;
                     ID_Flush = 1;
@@ -72,10 +74,18 @@ module Fetch (
 
                 end
 
-                1: begin
+                T_NT: begin
 
                     next_pc = EX_pc_4;
                     ID_Flush = 1;
+
+                end
+
+                default: begin
+
+                    next_pc = IF_pc_4;
+                    ID_Flush = 0;
+                    EX_Flush = 0;
 
                 end
 

@@ -1,23 +1,25 @@
 `timescale 1ns/1ps
 
+import constants::*;
+
 module Store (
-    input MemWrite,
-    input [31:0] addrb, rs2_data, clk_cycles, invalid_clk_cycles, retired_instructions, correct_predictions, total_predictions,
-    input [2:0] funct3,
-    output reg [3:0] web,
-    output reg [31:0] dib
+    input logic MemWrite,
+    input logic [XLEN-1:0] addrb, rs2_data, clk_cycles, invalid_clk_cycles, retired_instructions, correct_predictions, total_predictions,
+    input logic [2:0] funct3,
+    output logic [3:0] web,
+    output logic [XLEN-1:0] dib
 );
 
-    wire [1:0] byte_offset;
-    assign byte_offset = addrb % 4;
+    logic [1:0] byte_offset;
+    assign byte_offset = addrb[1:0];
 
     // RESERVED ADDRESSES TO WRITE CPU PERFORMANCE METRICS TO
     // Assumes the test programs don't write to these addresses
     localparam CLK_CYCLE_ADDR = 32'h5000, INVALID_CLK_CYCLE_ADDR = 32'h5004, RETIRED_INSTRUCTIONS_ADDR = 32'h5008, CORRECT_PREDICTIONS_ADDR = 32'h500C, TOTAL_PREDICTIONS_ADDR = 32'h5010;
 
-    reg [31:0] final_data;
+    logic [XLEN-1:0] final_data;
 
-    always @ (*) begin
+    always_comb begin
 
         web = 0;
         dib = 0;
@@ -56,6 +58,13 @@ module Store (
 
                         web = 4'b1111;
                         dib = final_data;
+
+                    end
+
+                    default: begin
+
+                        web = 'x;
+                        dib = 'x;
 
                     end
                 

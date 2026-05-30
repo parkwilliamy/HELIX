@@ -1,14 +1,14 @@
 `timescale 1ns/1ps
 
 module ALUControl(
-    input [6:0] funct7,
-    input [2:0] funct3,
-    input [1:0] ALUOp,
-    input regbit,
-    output reg [3:0] field
+    input logic sub_bit,
+    input logic [2:0] funct3,
+    input logic [1:0] ALUOp,
+    input logic regbit,
+    output logic [3:0] field
 );
 
-    always @(*) begin
+    always_comb begin
     
         field = 4'b0000;
 
@@ -16,10 +16,10 @@ module ALUControl(
 
             0: begin
 
-                if (regbit) field = {funct7[5], funct3}; // R-type format
+                if (regbit) field = {sub_bit, funct3}; // R-type format
                 else begin // I-type format
 
-                    if (funct3 == 3'b001 || funct3 == 3'b101) field = {funct7[5], funct3}; 
+                    if (funct3 == 3'b001 || funct3 == 3'b101) field = {sub_bit, funct3}; 
                     else field = {1'b0, funct3};
 
                 end
