@@ -147,7 +147,7 @@ module CPU (
         .ID_pc(ID_pc_wire),
         .pc_imm_in(ID_pc_imm),
         .pc_imm_out(IF_pc_imm),
-        .hit(IF_BTBhit),
+        .IF_BTBhit(IF_BTBhit),
         .IF_Branch(IF_Branch),
         .IF_Jump(IF_Jump)
     );
