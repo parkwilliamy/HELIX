@@ -1,29 +1,42 @@
 `timescale 1ns/1ps
 
+import constants::*;
+
 module MemAccess (
-    input clk, rst_n, byte_done,
-    input [7:0] RX_data, // Received data from sender
-    input [31:0] dob,
-    output reg TX_enable, // Indicates when data can be transmitted over TX
-    output reg [15:0] addra, addrb,
-    output reg [3:0] wea,
-    output reg [31:0] dia,
-    output reg [7:0] TX_data // Data to transmit over TX
+    input logic clk, rst_n, byte_done,
+    input logic [7:0] RX_data, // Received data from sender
+    input logic [XLEN-1:0] dob,
+    output logic TX_enable, // Indicates when data can be transmitted over TX
+    output logic [15:0] addra, addrb,
+    output logic [3:0] wea,
+    output logic [XLEN-1:0] dia,
+    output logic [7:0] TX_data // Data to transmit over TX
 );
 
     localparam ADDR_WIDTH = 16;
-    localparam IDLE = 3'b000, WRITE_1 = 3'b001, WRITE_2 = 3'b010, READ_1 = 3'b011, READ_2 = 3'b100, READ_3 = 3'b101, READ_4 = 3'b110, READ_5 = 3'b111;
-    reg [2:0] current_state, next_state;
+
+    typedef enum logic[2:0] {
+        IDLE = 3'b000, 
+        WRITE_1 = 3'b001, 
+        WRITE_2 = 3'b010, 
+        READ_1 = 3'b011, 
+        READ_2 = 3'b100, 
+        READ_3 = 3'b101, 
+        READ_4 = 3'b110, 
+        READ_5 = 3'b111
+    } mem_access_states;
+    
+    logic [2:0] current_state, next_state;
 
     // Buffers to hold bytes until message can be processed
-    reg [55:0] write_frame;
-    reg [31:0] read_frame;
+    logic [55:0] write_frame;
+    logic [XLEN-1:0] read_frame;
 
-    reg [2:0] msgidx; // Byte index used during data reception on RX
-    reg [1:0] word_idx; // Word index used during BRAM data transmission on TX
-    reg [15:0] ADDR_HIGH; // Stores last address to read data from in a read message
+    logic [2:0] msgidx; // Byte index used during data reception on RX
+    logic [1:0] word_idx; // Word index used during BRAM data transmission on TX
+    logic [15:0] ADDR_HIGH; // Stores last address to read data from in a read message
 
-    always @ (posedge clk) begin
+    always_ff @ (posedge clk) begin
 
         if (!rst_n) begin
 
@@ -93,7 +106,7 @@ module MemAccess (
                     if (byte_done) begin
 
                         msgidx <= msgidx+1;
-                        read_frame <= {RX_data, read_frame[31:8]};
+                        read_frame <= {RX_data, read_frame[XLEN-1:8]};
 
                     end
 
@@ -134,6 +147,14 @@ module MemAccess (
 
                 end
 
+                default: begin
+
+                    word_idx <= 'x;
+                    TX_data <= 'x;
+                    TX_enable <= 'x;
+                    addrb <= 'x;
+
+                end
                
             endcase
 
@@ -143,7 +164,7 @@ module MemAccess (
 
     // State Transition Logic
 
-    always @ (*) begin
+    always_comb begin
 
         case(current_state) 
 
@@ -201,10 +222,10 @@ module MemAccess (
 
             end
 
+            default: next_state = 'x;
+
         endcase
 
     end
-
-
 
 endmodule

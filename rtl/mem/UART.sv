@@ -1,33 +1,36 @@
 `timescale 1ns/1ps
 
 module UART (
-    input clk, rst_n, RX, TX_enable,
-    input [7:0] TX_data,
-    output reg TX, byte_done, // byte_done indicates when a byte is done being received on RX or transmitted on TX
-    output reg [7:0] RX_data
+    input logic clk, rst_n, RX, TX_enable,
+    input logic [7:0] TX_data,
+    output logic TX, byte_done, // byte_done indicates when a byte is done being received on RX or transmitted on TX
+    output logic [7:0] RX_data
 );
 
     // This module assumes a baud rate of 1Mb/s with clock of 57MHz
-    localparam MAX_COUNT = 56,
-               IDLE = 3'b000, 
-               START_RX = 3'b001, 
-               START_TX = 3'b010, 
-               DATA_RX = 3'b011,
-               DATA_TX = 3'b100,
-               STOP_RX = 3'b101,
-               STOP_TX = 3'b110;
+    localparam MAX_COUNT = 56;
 
-    reg [2:0] current_state, next_state;
-    reg [5:0] baud_count; // Counter for sampling data on RX line or triggering baud tick on TX line
-    reg [2:0] data_idx; // Index to track data bits during a transaction
-    reg baud_tick;
-    reg [7:0] data_buffer; // Shift register to hold sampled data from RX line
+    typedef enum logic[2:0] {
+        IDLE = 3'b000, 
+        START_RX = 3'b001, 
+        START_TX = 3'b010, 
+        DATA_RX = 3'b011,
+        DATA_TX = 3'b100,
+        STOP_RX = 3'b101,
+        STOP_TX = 3'b110
+    } uart_states;
 
-    reg [1:0] RX_buffer; // Holds sampled values of RX line to detect falling edge
-    wire RX_negedge;
+    logic [2:0] current_state, next_state;
+    logic [5:0] baud_count; // Counter for sampling data on RX line or triggering baud tick on TX line
+    logic [2:0] data_idx; // Index to track data bits during a transaction
+    logic baud_tick;
+    logic [7:0] data_buffer; // Shift register to hold sampled data from RX line
+
+    logic [1:0] RX_buffer; // Holds sampled values of RX line to detect falling edge
+    logic RX_negedge;
     assign RX_negedge = RX_buffer[1] && !RX_buffer[0];
 
-    always @ (posedge clk) begin
+    always_ff @ (posedge clk) begin
 
         if (!rst_n) begin
 
@@ -134,6 +137,13 @@ module UART (
 
                 end
 
+                default: begin
+
+                    byte_done <= 'x;
+                    TX <= 'x;
+
+                end
+
             endcase
 
             if (baud_count == MAX_COUNT-1) begin
@@ -152,7 +162,7 @@ module UART (
 
     // State Transition Logic
 
-    always @ (*) begin
+    always_comb begin
         
         next_state = IDLE;
 
@@ -219,6 +229,8 @@ module UART (
                 else next_state = STOP_TX;
 
             end
+
+            default: next_state = 'x;
 
         endcase
 
