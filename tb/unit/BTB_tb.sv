@@ -40,6 +40,8 @@ module BTB_tb;
         .IF_Jump(IF_Jump)
     );
 
+    logic [LRU_WIDTH-1:0] ID_lines_lru [WAYS-1:0];
+
     BTBInputs BTBTest = new;
 
     always #5 clk = ~clk;
@@ -47,50 +49,86 @@ module BTB_tb;
     initial begin
 
         clk = 0;
-        rst_n = 0;
         write = 0;
-        #20;
+        rst_n = 0;
+        repeat (2) @(posedge clk);
         rst_n = 1;
 
         $display("DIRECTED TESTS");
         $display("\n");
         $display("=================================================================");
         $display("\n");
-        $display("Read Miss - 50%% Ways Invalid");
+        $display("Read Miss - 50%% Ways Valid");
 
-        $populate_cache(HALF_INVALID);
+        $direct_read_tests(HALF_VALID, 0);
 
         $display("\n");
         $display("=================================================================");
         $display("\n");
+        $display("Read Miss - All Ways Valid");
 
+        $direct_read_tests(ALL_VALID, 0);
+
+        $display("\n");
+        $display("=================================================================");
+        $display("\n");
+        $display("Read Hit - Half Ways Valid");
+
+        $direct_read_tests(HALF_VALID, 1);
+
+        $display("\n");
+        $display("=================================================================");
+        $display("\n");
+        $display("Read Hit - All Ways Valid");
+
+        $direct_read_tests(ALL_VALID, 1);
+
+        $display("\n");
+        $display("=================================================================");
+        $display("\n");
         $display("CONSTRAINED RANDOM TESTS");
+        $display("\n");
+        $display("=================================================================");
+        $display("\n");
+        $display("Read Miss Tests - No Ways Valid");
 
-        $display("Read Miss Tests - All Ways Invalid");
+        rst_n = 0;
+        repeat (2) @(posedge clk);
+        rst_n = 1;
 
         repeat (100) begin
 
             BTBTest.randomize();
             IF_pc = BTBTest.IF_pc;
-            #1;
-            assert(hit==0);
+            @(negedge clk);
+            assert(!hit);
             
         end
 
         $display("\n");
         $display("=================================================================");
         $display("\n");
+        $display("Write Tests - No Ways Valid");
 
-        $display("Read Miss Tests - 50%% Ways Invalid");
+        write = 1;
 
-        repeat (100) begin
+        crv_write_tests(NO_VALID);
 
-            BTBTest.randomize(); 
-            IF_pc = BTBTest.IF_pc;
-            #1;
-            assert(hit==0);
-            
-        end
+        $display("\n");
+        $display("=================================================================");
+        $display("\n");
+        $display("Write Tests - 50%% Ways Valid");
+
+        crv_write_tests(HALF_VALID);
+
+        $display("\n");
+        $display("=================================================================");
+        $display("\n");
+        $display("Write Tests - All Ways Valid");
+
+        crv_write_tests(ALL_VALID);
+
+        write = 0;
 
         $finish;
 
@@ -98,49 +136,59 @@ module BTB_tb;
 
     end
 
-
-
 endmodule
 
-// This task fills cache with invalid + valid lines according to input
+// This task fills a cache set with invalid + valid lines according to input
 // tag_in is only provided when testing for read hits
 // If not provided, read miss occurs
 
-task populate_cache (input state, input [TAG_WIDTH-1:0] tag_in = 0);
+task populate_set (input state, input [3:0] set = 0, input [TAG_WIDTH-1:0] tag_in);
 
     begin
+
+        write = 0;
+        ID_pc = {{TAG_WIDTH{1'b0}}, set, 2'b0}; 
+        pc_imm_in = 32'b0;
+
+        rst_n = 0;
+        repeat (2) @(posedge clk);
+        rst_n = 1;
+
+        write = 1;
 
         always_comb begin
 
             case (state)
 
-                HALF_INVALID: begin
+                HALF_VALID: begin
 
-                    for (int i = 0; i < WAYS/2; i++) begin
+                    for (int i = 0; i < WAYS/2-1; i++) begin
 
-                        branch_target_buffer[0][i] = {{TAG_WIDTH{1'b0}}, {XLEN{1'b0}}, 1'b1, 1'b0, {LRU_WIDTH{1'b0}}};
-
-                    end
-
-                    for (int i = WAYS/2; i < WAYS; i++) begin
-
-                        branch_target_buffer[0][i] = {{TAG_WIDTH{1'b0}}, {XLEN{1'b0}}, 1'b1, 1'b1, i[LRU_WIDTH:0]};
+                        @(posedge clk); // wait for posedge clk to write pc_imm_in to BTB set
+                        @(negedge clk); // avoid race condition
+                        ID_pc[XLEN-1 -: TAG_WIDTH] = ID_pc[XLEN-1 -: TAG_WIDTH]+1; // change tag for next line
 
                     end
 
-                    branch_target_buffer[0][WAYS-1].tag = tag_in;
+                    ID_pc = {tag_in, set, 2'b0}; // write next line in set with matching tag (or 0 if unspecified)
+                    @(posedge clk); 
+                    @(negedge clk);
 
                 end
 
                 ALL_VALID: begin
 
-                    for (int i = 0; i < WAYS; i++) begin
+                    for (int i = 0; i < WAYS-1; i++) begin
 
-                        branch_target_buffer[0][i] = {{TAG_WIDTH{1'b0}}, {XLEN{1'b0}}, 1'b1, 1'b1, i[LRU_WIDTH:0]};
+                        @(posedge clk); // wait for posedge clk to write pc_imm_in to BTB set
+                        @(negedge clk); // avoid race condition
+                        ID_pc[XLEN-1 -: TAG_WIDTH] = ID_pc[XLEN-1 -: TAG_WIDTH]+1; // change tag for next line
 
                     end
 
-                    branch_target_buffer[0][WAYS-1].tag = tag_in;
+                    ID_pc = {tag_in, set, 2'b0}; // write last line in set with matching tag (or 0 if unspecified)
+                    @(posedge clk); 
+                    @(negedge clk);
 
                 end
 
@@ -148,6 +196,104 @@ task populate_cache (input state, input [TAG_WIDTH-1:0] tag_in = 0);
 
         end
 
+        write = 0;
+
     end
 
 endtask
+
+task direct_read_tests(input state, input hit);
+
+    IF_pc = 32'h0000_2040; // Maps to set 0
+    tag_in = hit ? IF_pc[XLEN-1 -: TAG_WIDTH] : 32'b0;
+    logic [XLEN-1:0] write_addr = (state == ALL_VALID) WAYS-1 : WAYS/2-1; // address to write the last valid line of the set
+
+    $populate_cache(state, 0, tag_in); // Fill set 0 with 50% or 100% valid lines based on STATE
+    
+    // tag_in == 0 indicates read miss tests, else test is for read hits
+
+    @(negedge clk);
+
+    always_comb begin
+
+        if (tag_in) begin 
+
+            assert(hit);
+            assert(!DUT.IF_lines[write_addr].lru);
+            assert(DUT.IF_lines[write_addr].valid);
+            assert(DUT.IF_lines[write_addr].tag == IF_pc[XLEN-1 -: TAG_WIDTH]);
+
+        end else assert(!hit); 
+
+    end
+
+    IF_pc = 32'h0000_203C; // Maps to set 15
+    tag_in = hit ? IF_pc[XLEN-1 -: TAG_WIDTH] : 32'b0;
+
+    $populate_cache(state, 15, tag_in); // Fill set 0 with 50% or 100% valid lines based on STATE
+    
+    @(negedge clk);
+
+    always_comb begin
+
+        if (tag_in) begin
+
+            assert(hit);
+            assert(!DUT.IF_lines[write_addr].lru);
+            assert(DUT.IF_lines[write_addr].valid);
+            assert(DUT.IF_lines[write_addr].tag == IF_pc[XLEN-1 -: TAG_WIDTH]);
+
+        end else assert(!hit);
+
+    end
+
+endtask
+
+task crv_write_tests(input state);
+
+    $populate_set(state, 0, 0); 
+    logic [XLEN-1:0] write_addr = (state == ALL_VALID || state == NO_VALID) 0 : WAYS/2; // address to write a new line, depending on cache lines stored
+
+    repeat (100) begin
+
+        BTBTest.randomize(); 
+        IF_pc = BTBTest.IF_pc;
+        pc_imm_in = BTBTest.pc_imm_in;
+        @(posedge clk); // write to BTB on posedge
+        @(negedge clk); // wait for write to complete
+        assert(DUT.ID_lines[write_addr].valid);
+        assert(!DUT.ID_lines[write_addr].lru);
+        assert(DUT.ID_lines[write_addr].pc_imm == pc_imm_in);
+        if (state == ALL_VALID) assert(lru_unique(0));
+            
+    end
+
+    $populate_set(state, 15, 0); 
+
+    repeat (100) begin
+
+        BTBTest.randomize(); 
+        IF_pc = BTBTest.IF_pc;
+        pc_imm_in = BTBTest.pc_imm_in;
+        @(posedge clk); // write to BTB on posedge
+        @(negedge clk); // wait for write to complete
+        assert(DUT.ID_lines[write_addr].valid);
+        assert(!DUT.ID_lines[write_addr].lru);
+        assert(DUT.ID_lines[write_addr].pc_imm == pc_imm_in);
+        if (state == ALL_VALID) assert(lru_unique(15));
+            
+    end
+
+endtask
+
+function lru_unique(input set_index);
+
+    for (int i = 0; i < WAYS; i++) begin
+
+        ID_lines_lru[i] = DUT.branch_target_buffer[set_index][i].lru;
+
+    end
+
+    lru_unique = ID_lines_lru.unique();
+
+endfunction

@@ -34,9 +34,10 @@ package BTB_constants;
         logic [LRU_WIDTH-1:0] lru; // LRU counter, where 0 indicates the least recently used line
     } BTB_line;
 
-    typedef enum logic {
-        HALF_INVALID = 1'b0,
-        ALL_VALID = 1'b1;
+    typedef enum logic [1:0] {
+        NO_VALID = 2'b00,
+        HALF_VALID = 2'b01,
+        ALL_VALID = 2'b10;
     } BTB_states;
 
 endpackage;
