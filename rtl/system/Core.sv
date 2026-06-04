@@ -1,11 +1,13 @@
 `timescale 1ns/1ps
 
-module CPU (
-    input rst_n, clk,
-    input [31:0] doa, dob,
-    output [15:0] addra, addrb, 
-    output [3:0] web, 
-    output [31:0] dib 
+import top_constants::*;
+
+module Core (
+    input logic rst_n, clk,
+    input logic [XLEN-1:0] doa, dob,
+    output logic [15:0] addra, addrb, 
+    output logic [3:0] web, 
+    output logic [XLEN-1:0] dib 
 );
 
     // NAMING CONVENTIONS
@@ -19,99 +21,97 @@ module CPU (
 
     // IF
 
-    reg [31:0] IF_pc;
-    wire [31:0] next_pc;
+    logic [XLEN-1:0] IF_pc;
+    logic [XLEN-1:0] next_pc;
 
     // ID
 
-    reg [31:0] ID_pc, ID_pc_4;
-    reg [7:0] ID_BHTaddr;
-    reg [1:0] ID_branch_prediction;
-    reg ID_BTBhit;
+    logic [XLEN-1:0] ID_pc, ID_pc_4;
+    logic [7:0] ID_BHTaddr;
+    logic [1:0] ID_branch_prediction;
+    logic ID_BTBhit;
     
     // EX
     
-    reg [3:0] EX_field;
-    reg [2:0] EX_ValidReg, EX_funct3;
-    reg [1:0] EX_ALUOp, EX_RegSrc, EX_branch_prediction;
-    reg EX_ALUSrc, EX_RegWrite, EX_MemRead, EX_MemWrite, EX_Branch, EX_Jump;
-    reg [31:0] EX_pc_4, EX_rs1_data, EX_rs2_data, EX_imm, EX_pc_imm;
-    reg [4:0] EX_rs1, EX_rs2, EX_rd;
-    reg [7:0] EX_BHTaddr;
+    logic [3:0] EX_field;
+    logic [2:0] EX_ValidReg, EX_funct3;
+    logic [1:0] EX_ALUOp, EX_RegSrc, EX_branch_prediction;
+    logic EX_ALUSrc, EX_RegWrite, EX_MemRead, EX_MemWrite, EX_Branch, EX_Jump;
+    logic [XLEN-1:0] EX_pc_4, EX_rs1_data, EX_rs2_data, EX_imm, EX_pc_imm;
+    logic [4:0] EX_rs1, EX_rs2, EX_rd;
+    logic [7:0] EX_BHTaddr;
 
     // MEM
 
-    reg [31:0] MEM_pc_4;
-    reg [2:0] MEM_funct3, MEM_ValidReg;
-    reg [1:0] MEM_RegSrc; 
-    reg MEM_MemRead, MEM_MemWrite, MEM_RegWrite;
-    reg [31:0] MEM_pc_imm, MEM_ALU_result, MEM_rs2_data;
-    reg [4:0] MEM_rs2, MEM_rd;
+    logic [XLEN-1:0] MEM_pc_4;
+    logic [2:0] MEM_funct3, MEM_ValidReg;
+    logic [1:0] MEM_RegSrc; 
+    logic MEM_MemRead, MEM_MemWrite, MEM_RegWrite;
+    logic [XLEN-1:0] MEM_pc_imm, MEM_ALU_result, MEM_rs2_data;
+    logic [4:0] MEM_rs2, MEM_rd;
 
     // WB
 
-    reg [31:0] WB_pc_imm, WB_pc_4, WB_ALU_result;
-    reg [2:0] WB_funct3, WB_ValidReg;
-    reg [1:0] WB_RegSrc; 
-    reg WB_MemRead;
-    reg WB_RegWrite;
-    reg [4:0] WB_rd;
+    logic [XLEN-1:0] WB_pc_imm, WB_pc_4, WB_ALU_result;
+    logic [2:0] WB_funct3, WB_ValidReg;
+    logic [1:0] WB_RegSrc; 
+    logic WB_MemRead;
+    logic WB_RegWrite;
+    logic [4:0] WB_rd;
 
 
     // ****************************************************************************************************** PIPELINE NETS ***********************************************************************************************************************************
 
     // IF
 
-    wire [31:0] IF_pc_4, IF_pc_imm;
-    wire IF_Branch, IF_Jump, BTBwrite, IF_BTBhit;
-    wire [7:0] IF_BHTaddr;
-    wire [1:0] IF_branch_prediction;
+    logic [XLEN-1:0] IF_pc_4, IF_pc_imm;
+    logic IF_Branch, IF_Jump, BTBwrite, IF_BTBhit;
+    logic [7:0] IF_BHTaddr;
+    logic [1:0] IF_branch_prediction;
 
     // ID
 
-    wire [31:0] ID_instruction, ID_imm, ID_rs1_data, ID_rs2_data, ID_pc_imm, ID_pc_wire;
-    wire [6:0] ID_opcode;
-    wire [11:7] ID_rd;
-    wire [14:12] ID_funct3;
-    wire [19:15] ID_rs1;
-    wire [24:20] ID_rs2;
-    wire [31:25] ID_funct7;
-    wire ID_Stall, ID_Flush, ID_ALUSrc, ID_RegWrite, ID_MemRead, ID_MemWrite, ID_Valid, ID_BTBhit_wire, ID_Branch, ID_Jump;
-    wire [2:0] ID_ValidReg;
-    wire [1:0] ID_ALUOp, ID_RegSrc, ID_branch_prediction_wire;
-    wire [3:0] ID_field; 
+    logic [XLEN-1:0] ID_instruction, ID_imm, ID_rs1_data, ID_rs2_data, ID_pc_imm, ID_pc_wire;
+    logic [6:0] ID_opcode;
+    logic [11:7] ID_rd;
+    logic [14:12] ID_funct3;
+    logic [19:15] ID_rs1;
+    logic [24:20] ID_rs2;
+    logic [XLEN-1:25] ID_funct7;
+    logic ID_Stall, ID_Flush, ID_ALUSrc, ID_RegWrite, ID_MemRead, ID_MemWrite, ID_Valid, ID_BTBhit_wire, ID_Branch, ID_Jump;
+    logic [2:0] ID_ValidReg;
+    logic [1:0] ID_ALUOp, ID_RegSrc, ID_branch_prediction_wire;
+    logic [3:0] ID_field; 
     
     // EX
     
-    wire EX_zero, EX_sign, EX_overflow, EX_carry, EX_Flush, EX_branch_taken, EX_Branch_wire, EX_rs1_fwd, EX_rs2_fwd, EX_Jump_wire, EX_ALUSrc_wire, EX_MemRead_wire;
-    wire [31:0] EX_op1, EX_op2, EX_rs1_fwd_data, EX_rs2_fwd_data, EX_rs1_data_final, EX_rs2_data_final, EX_ALU_result, EX_pc_4_wire, EX_pc_imm_wire, EX_ALU_result_wire;
-    wire [3:0] EX_field_wire;
-    wire [2:0] EX_funct3_wire, EX_ValidReg_wire;
-    wire [1:0] EX_prediction_status, EX_branch_prediction_wire;
-    wire [4:0] EX_rs1_wire, EX_rs2_wire, EX_rd_wire;
+    logic EX_zero, EX_sign, EX_overflow, EX_carry, EX_Flush, EX_branch_taken, EX_Branch_wire, EX_rs1_fwd, EX_rs2_fwd, EX_Jump_wire, EX_ALUSrc_wire, EX_MemRead_wire;
+    logic [XLEN-1:0] EX_op1, EX_op2, EX_rs1_fwd_data, EX_rs2_fwd_data, EX_rs1_data_final, EX_rs2_data_final, EX_ALU_result, EX_pc_4_wire, EX_pc_imm_wire, EX_ALU_result_wire;
+    logic [3:0] EX_field_wire;
+    logic [2:0] EX_funct3_wire, EX_ValidReg_wire;
+    logic [1:0] EX_prediction_status, EX_branch_prediction_wire;
+    logic [4:0] EX_rs1_wire, EX_rs2_wire, EX_rd_wire;
 
     // MEM
 
-    wire [31:0] MEM_rs2_fwd_data, MEM_rs2_data_final, MEM_ALU_result_wire, MEM_pc_4_wire, MEM_pc_imm_wire;
-    wire [2:0] MEM_funct3_wire, MEM_ValidReg_wire;
-    wire MEM_MemWrite_wire, MEM_MemRead_wire;
-    wire [1:0] MEM_RegSrc_wire;
-    wire [4:0] MEM_rs2_wire, MEM_rd_wire;
+    logic [XLEN-1:0] MEM_rs2_fwd_data, MEM_rs2_data_final, MEM_ALU_result_wire, MEM_pc_4_wire, MEM_pc_imm_wire;
+    logic [2:0] MEM_funct3_wire, MEM_ValidReg_wire;
+    logic MEM_rs2_fwd, MEM_MemWrite_wire, MEM_MemRead_wire;
+    logic [1:0] MEM_RegSrc_wire;
+    logic [4:0] MEM_rs2_wire, MEM_rd_wire;
 
     // WB
 
-    wire WB_RegWrite_wire;
-    wire [4:0] WB_rd_wire;
-    wire [31:0] WB_rd_write_data;
-    wire [31:0] WB_ALU_result_wire, WB_pc_imm_wire, WB_pc_4_wire;
-    wire [2:0] WB_funct3_wire, WB_ValidReg_wire;
-    wire [1:0] WB_RegSrc_wire;
-    wire WB_MemRead_wire;
+    logic WB_RegWrite_wire;
+    logic [4:0] WB_rd_wire;
+    logic [XLEN-1:0] WB_rd_write_data;
+    logic [2:0] WB_ValidReg_wire;
+    logic WB_MemRead_wire;
 
 
     // ********************************************************************************************************  PERFORMANCE METRICS **************************************************************************************************************************
 
-    reg [31:0] clk_cycles, invalid_clk_cycles, retired_instructions, correct_predictions, total_predictions;
+    logic [XLEN-1:0] clk_cycles, invalid_clk_cycles, retired_instructions, correct_predictions, total_predictions;
 
     // CPI = (clk_cycles - invalid_clk_cycles) / (retired_instructions)
     // Branch Predictor Accuracy = correct_predictions / total_predictions
@@ -121,14 +121,14 @@ module CPU (
                
     // =============================== INSTRUCTION FETCH ================================
 
-    reg [1:0] BHT [255:0]; // Branch History Table stores predictions for up to 256 branch instructions
+    logic [1:0] BHT [255:0]; // Branch History Table stores predictions for up to 256 branch instructions
     // Prediction Encodings
     // 1) 00 - Strong Not Taken
     // 2) 01 - Weak Not Taken
     // 3) 10 - Weak Taken
     // 4) 11 - Strong Taken
 
-    reg [7:0] gh; // Global History shift register stores the last 8 predictions, with 0 indicating branch not taken and 1 indicating branch taken
+    logic [7:0] gh; // Global History shift register stores the last 8 predictions, with 0 indicating branch not taken and 1 indicating branch taken
     
     assign ID_pc_wire = ID_pc;
     assign IF_BHTaddr = IF_pc[9:2] ^ gh; // gshare branch prediction indexing
@@ -143,8 +143,8 @@ module CPU (
         .rst_n(rst_n),
         .write(BTBwrite), 
         .ID_Branch(ID_Branch), 
-        .IF_pc(IF_pc[31:2]),
-        .ID_pc(ID_pc_wire[31:2]),
+        .IF_pc(IF_pc[XLEN-1:2]),
+        .ID_pc(ID_pc_wire[XLEN-1:2]),
         .pc_imm_in(ID_pc_imm),
         .pc_imm_out(IF_pc_imm),
         .IF_BTBhit(IF_BTBhit),
@@ -155,7 +155,7 @@ module CPU (
     
     // =============================== INSTRUCTION DECODE ===============================
 
-    reg ID_PostFlush; // flag used to indicate if a pipeline flush occured last cycle
+    logic ID_PostFlush; // flag used to indicate if a pipeline flush occured last cycle
 
     assign ID_instruction = ID_PostFlush ? 0 : doa; // if pipeline flush occured last cycle, clear the instruction received
     assign ID_opcode = ID_instruction[6:0];
@@ -163,8 +163,8 @@ module CPU (
     assign ID_funct3 = ID_instruction[14:12];
     assign ID_rs1 = ID_instruction[19:15];
     assign ID_rs2 = ID_instruction[24:20];
-    assign ID_funct7 = ID_instruction[31:25];
-    assign addra = ID_Stall ? ID_pc : IF_pc; // fetch instruction from ID_pc if pipeline is stalled
+    assign ID_funct7 = ID_instruction[XLEN-1:25];
+    assign addra = ID_Stall ? ID_pc[15:0] : IF_pc[15:0]; // fetch instruction from ID_pc if pipeline is stalled
     
     ControlUnit INST2 (
         .opcode(ID_opcode), 
@@ -253,7 +253,7 @@ module CPU (
     assign MEM_ALU_result_wire = MEM_ALU_result;
     assign MEM_funct3_wire = MEM_funct3;
     assign MEM_MemWrite_wire = MEM_MemWrite;
-    assign addrb = MEM_ALU_result;
+    assign addrb = MEM_ALU_result[15:0];
 
     Store INST8 (
         .MemWrite(MEM_MemWrite_wire),
@@ -271,12 +271,6 @@ module CPU (
 
 
     // =============================== REGFILE WRITEBACK ===============================+
-    
-    assign WB_ALU_result_wire = WB_ALU_result;
-    assign WB_pc_imm_wire = WB_pc_imm;
-    assign WB_pc_4_wire = WB_pc_4;
-    assign WB_funct3_wire = WB_funct3;
-    assign WB_RegSrc_wire = WB_RegSrc;
 
     WriteBack INST9 (
         .ALU_result(WB_ALU_result), 

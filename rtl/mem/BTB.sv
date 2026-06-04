@@ -1,6 +1,6 @@
 `timescale 1ns/1ps
 
-import constants::*;
+import BTB_constants::*;
 
 module BTB (
     input logic clk, rst_n, write, ID_Branch,
@@ -10,22 +10,6 @@ module BTB (
     output logic IF_BTBhit, // 0 if branch target address wasn't found for a given branch instruction, 1 otherwise
     output logic IF_Branch, IF_Jump // These signals indicate whether the fetched target address was for a branch or jump instruction
 );
-
-    // 2-way set associative cache
-    localparam int LINES = 32, 
-                WAYS = 2, 
-                SETS = LINES / WAYS,
-                INDEX_WIDTH = $clog2(SETS),
-                TAG_WIDTH = (XLEN-2) - INDEX_WIDTH, // Ignore lower 2 bits of PC since redundant with byte alignment
-                LRU_WIDTH = $clog2(WAYS);
-
-    typedef struct packed { // BTB cache line layout
-        logic [TAG_WIDTH-1:0] tag;
-        logic [XLEN-1:0] pc_imm;
-        logic branch; // 0 means jump, 1 means branch
-        logic valid; // 1 means the pc_imm value is valid
-        logic [LRU_WIDTH-1:0] lru; // LRU counter, where 0 indicates the least recently used line
-    } BTB_line;
 
     BTB_line branch_target_buffer [SETS][WAYS]; 
 

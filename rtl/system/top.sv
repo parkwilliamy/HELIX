@@ -1,14 +1,16 @@
 `timescale 1ns/1ps
 
+import top_constants::*;
+
 module top (
-    input clk, rst_n_mem, rst_n_cpu, rst_clk, mem_control, RX,
-    output TX,
-    output [12:0] led // NOTE: LEDs are used to avoid Vivado optimizing away all the modules
+    input logic clk, rst_n_mem, rst_n_cpu, rst_clk, mem_control, RX,
+    output logic TX,
+    output logic [12:0] led // NOTE: LEDs are used to avoid Vivado optimizing away all the modules
 );
 
     // Clock Wizard is used to convert 100MHz Basys-3 clock into 57MHz for CPU
   
-    wire clk_out1;
+    logic clk_out1;
     
     clk_wiz_0 INST1 (
       .clk_out1(clk_out1), // 57 MHz clock             
@@ -19,14 +21,14 @@ module top (
     
     // BRAM (word addressable)
 
-    wire [3:0] wea, web;
-    wire [15:0] addra, addrb; // 20 KB for IMEM, 12 KB for DMEM
-    wire [15:0] addra_cpu, addrb_cpu;
-    wire [15:0] addra_mem, addrb_mem;
-    wire [31:0] doa, dob; // Port A is IMEM, Port B is DMEM
-    wire [31:0] dia, dib;
+    logic [3:0] wea, web;
+    logic [15:0] addra, addrb; // 20 KB for IMEM, 12 KB for DMEM
+    logic [15:0] addra_cpu, addrb_cpu;
+    logic [15:0] addra_mem, addrb_mem;
+    logic [XLEN-1:0] doa, dob; // Port A is IMEM, Port B is DMEM
+    logic [XLEN-1:0] dia, dib;
     
-    wire [15:0] row_a, row_b;
+    logic [15:0] row_a, row_b;
     
     // mem_control determines what device has control of BRAM reads/writes, 0 is CPU, 1 is MemAccess
     // Addresses are right shifted 2 bits to convert a byte address into a word address
@@ -47,7 +49,7 @@ module top (
         .doutb(dob)
     );
 
-    CPU INST3 (
+    Core INST3 (
         .clk(clk_out1),
         .rst_n(rst_n_cpu),
         .doa(doa),
@@ -58,8 +60,8 @@ module top (
         .dib(dib)
     );
 
-    wire TX_enable, byte_done;
-    wire [7:0] TX_data, RX_data;
+    logic TX_enable, byte_done;
+    logic [7:0] TX_data, RX_data;
 
     // UART packs bits in bytes, while MemAccess packs bytes into frames
     // Both modules work together to read and write from BRAM while the CPU is not executing

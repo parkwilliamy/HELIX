@@ -1,6 +1,6 @@
 `timescale 1ns/1ps
 
-import constants::*;
+import top_constants::*;
 
 module BRU (
     input logic [1:0] EX_branch_prediction,

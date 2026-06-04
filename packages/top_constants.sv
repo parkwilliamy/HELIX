@@ -1,6 +1,6 @@
 `timescale 1ns/1ps
 
-package constants;
+package top_constants;
 
     localparam XLEN = 32; // RISC-V Register Length
 

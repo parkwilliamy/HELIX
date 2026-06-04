@@ -1,6 +1,6 @@
 `timescale 1ns/1ps
 
-import constants::*;
+import top_constants::*;
 
 module Fetch (
     input logic [1:0] IF_branch_prediction, ID_branch_prediction, prediction_status, 

@@ -1,6 +1,6 @@
 `timescale 1ns/1ps
 
-import constants::*;
+import top_constants::*;
 
 module ImmGen (
     input logic [XLEN-1:0] instruction,
