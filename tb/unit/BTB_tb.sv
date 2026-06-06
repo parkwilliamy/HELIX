@@ -18,6 +18,16 @@ class BTBInputs;
         pc_imm_in % 4 == 0;
     }
 
+    covergroup cg
+        coverpoint IF_pc;
+        coverpoint ID_pc;
+        coverpoint pc_imm_in;
+    endgroup
+
+    function new()
+        cg = new();
+    endfunction
+
 endclass
 
 module BTB_tb;
