@@ -26,18 +26,10 @@ package BTB_constants;
                                 MEM_SIZE = 32'h0000_5000, // 20 KiB instruction memory
                                 ADDR_END = ADDR_START + MEM_SIZE;
 
-    typedef struct packed { // BTB cache line layout
-        logic [TAG_WIDTH-1:0] tag;
-        logic [XLEN-1:0] pc_imm;
-        logic branch; // 0 means jump, 1 means branch
-        logic valid; // 1 means the pc_imm value is valid
-        logic [LRU_WIDTH-1:0] lru; // LRU counter, where 0 indicates the least recently used line
-    } BTB_line;
-
     typedef enum logic [1:0] {
         NO_VALID = 2'b00,
         HALF_VALID = 2'b01,
-        ALL_VALID = 2'b10;
+        ALL_VALID = 2'b10
     } BTB_states;
 
 endpackage;
