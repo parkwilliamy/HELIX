@@ -1,8 +1,8 @@
 `timescale 1ns/1ps
 
-import top_constants::*;
-
 package BTB_constants;
+
+    import top_constants::*;
 
     // 2-way set associative cache
     localparam int LINES = 32, 
@@ -32,4 +32,4 @@ package BTB_constants;
         ALL_VALID = 2'b10
     } BTB_states;
 
-endpackage;
+endpackage

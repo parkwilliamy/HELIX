@@ -1,8 +1,9 @@
 `timescale 1ns/1ps
 
-import BTB_constants::*;
-
-module BTB (
+module BTB
+    import BTB_constants::*;
+    import top_constants::*;
+(
     input logic clk, rst_n, write, ID_Branch,
     input logic [XLEN-1:2] IF_pc, ID_pc,
     input logic [XLEN-1:0] pc_imm_in, // Computed branch target address to write to BTB during ID
