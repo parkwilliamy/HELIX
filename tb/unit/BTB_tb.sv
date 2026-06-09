@@ -148,7 +148,7 @@ module BTB_tb;
 
         write = 0;
         ID_pc = {{TAG_WIDTH{1'b0}}, set, 2'b0}; 
-        pc_imm_in = 32'b0;
+        pc_imm_in = 32'hFFFF;
 
         rst_n = 0;
         repeat (2) @(posedge clk);
@@ -197,49 +197,52 @@ module BTB_tb;
 
     endtask
 
-    task direct_read_tests(input [1:0] state, input hit);
+    task direct_read_tests(input [1:0] state, input hit_test);
 
         logic [TAG_WIDTH-1:0] tag_in; 
         logic [XLEN-1:0] write_addr; 
 
         IF_pc = 32'h0000_2040; // Maps to set 0
-        tag_in = hit ? IF_pc[XLEN-1 -: TAG_WIDTH] : {TAG_WIDTH{1'b0}};
+        tag_in = hit_test ? IF_pc[XLEN-1 -: TAG_WIDTH] : {TAG_WIDTH{1'b0}};
         write_addr = (state == ALL_VALID) ? WAYS-1 : WAYS/2-1; // address to write the last valid line of the set
 
-        populate_set(state, 0, tag_in); // Fill set 0 with 50% or v% valid lines based on STATE
-        
+        $display("Tag_In: %h, Write_Addr: %h", tag_in, write_addr);
+        populate_set(state, 0, tag_in); // Fill set 0 with 50% or 100% valid lines based on STATE
+        print_set(0);
         // tag_in == 0 indicates read miss tests, else test is for read hits
 
         @(negedge clk);
 
         if (tag_in) begin 
 
-            assert(hit);
+            assert(IF_BTBhit);
             assert(!DUT.IF_lines[write_addr].lru);
+            $display("%h", DUT.IF_lines[write_addr]);
             assert(DUT.IF_lines[write_addr].valid);
             assert(DUT.IF_lines[write_addr].tag == IF_pc[XLEN-1 -: TAG_WIDTH]);
+            
 
         end 
         
-        else assert(!hit); 
+        else assert(!IF_BTBhit); 
 
         IF_pc = 32'h0000_203C; // Maps to set 15
-        tag_in = hit ? IF_pc[XLEN-1 -: TAG_WIDTH] : {TAG_WIDTH{1'b0}};
+        tag_in = IF_BTBhit ? IF_pc[XLEN-1 -: TAG_WIDTH] : {TAG_WIDTH{1'b0}};
 
         populate_set(state, 15, tag_in); // Fill set 0 with 50% or 100% valid lines based on STATE
-        
+        print_set(15);
         @(negedge clk);
 
         if (tag_in) begin
 
-            assert(hit);
+            assert(IF_BTBhit);
             assert(!DUT.IF_lines[write_addr].lru);
             assert(DUT.IF_lines[write_addr].valid);
             assert(DUT.IF_lines[write_addr].tag == IF_pc[XLEN-1 -: TAG_WIDTH]);
 
         end 
         
-        else assert(!hit);
+        else assert(!IF_BTBhit);
 
     endtask
 
@@ -250,6 +253,7 @@ module BTB_tb;
         write_addr = (state == ALL_VALID || state == NO_VALID) ? 0 : WAYS/2; // address to write a new line, depending on cache lines stored
 
         populate_set(state, 0, 0); 
+        print_set(0);
 
         repeat (10) begin
 
@@ -266,6 +270,7 @@ module BTB_tb;
         end
 
         populate_set(state, 15, 0); 
+        print_set(15);
 
         repeat (10) begin
 
@@ -283,7 +288,7 @@ module BTB_tb;
 
     endtask
 
-    function logic lru_unique(input [3:0] set_index);
+    function logic lru_unique(input [INDEX_WIDTH-1:0] set_index);
 
         logic [LRU_WIDTH-1:0] vals [WAYS];
         lru_unique = 1'b1;
@@ -305,6 +310,16 @@ module BTB_tb;
                     
 
     endfunction
+
+    task print_set(input [INDEX_WIDTH-1:0] set_index);
+
+        for (int i = 0; i < WAYS; i++) begin
+
+            $display("Set %d, Way %d: %h", set_index, i, DUT.branch_target_buffer[set_index][i]);
+
+        end
+
+    endtask
 
 endmodule
 

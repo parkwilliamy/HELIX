@@ -12,8 +12,9 @@ lint:
 	$(VERILATOR) $(LINT_FLAGS) -f $(SRCS)
 
 sim:
+	rm -rf ./out/*
 	xvlog -sv $(PKGS) $(RTL) $(TB)
 	xelab $(TOP)_tb -s $(TOP)_tb_sim
-	xsim $(TOP)_tb_sim -runall
-	
+	xsim $(TOP)_tb_sim -runall -log ./out/$(TOP)_sim.log
+	mv xelab* xsim* xvlog* ./out/
 
