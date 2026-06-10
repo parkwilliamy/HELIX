@@ -100,7 +100,7 @@ module BTB
 
                 for (int j = 0; j < WAYS; j++) begin
 
-                    branch_target_buffer[i][j] <= {{TAG_WIDTH{1'b0}}, {XLEN{1'b0}}, 1'b1, 1'b0, {LRU_WIDTH{1'b0}}}; // Initialize branch bit to 1, valid bit to 0, LRU counter to 0
+                    branch_target_buffer[i][j] <= {{TAG_WIDTH{1'b0}}, {XLEN{1'b0}}, 1'b1, 0'b0, {LRU_WIDTH{1'b0}}}; // Initialize branch bit to 1, valid bit to 0, LRU counter to 0
 
                 end
 

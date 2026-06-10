@@ -58,7 +58,6 @@ module BTB_tb;
 
     initial begin
 
-        $display("hi");
         clk = 0;
         write = 0;
         rst_n = 0;

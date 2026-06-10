@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wave_config>
+   <wave_state>
+   </wave_state>
+   <db_ref_list>
+      <db_ref path="BTB_tb_sim.wdb" id="1">
+         <top_modules>
+            <top_module name="BTB_constants" />
+            <top_module name="BTB_tb" />
+            <top_module name="top_constants" />
+         </top_modules>
+      </db_ref>
+   </db_ref_list>
+   <zoom_setting>
+      <ZoomStartTime time="0.000 ns"></ZoomStartTime>
+      <ZoomEndTime time="122.101 ns"></ZoomEndTime>
+      <Cursor1Time time="50.400 ns"></Cursor1Time>
+   </zoom_setting>
+   <column_width_setting>
+      <NameColumnWidth column_width="404"></NameColumnWidth>
+      <ValueColumnWidth column_width="191"></ValueColumnWidth>
+   </column_width_setting>
+   <WVObjectSize size="10" />
+   <wvobject fp_name="/BTB_tb/clk" type="logic">
+      <obj_property name="ElementShortName">clk</obj_property>
+      <obj_property name="ObjectShortName">clk</obj_property>
+   </wvobject>
+   <wvobject fp_name="/BTB_tb/rst_n" type="logic">
+      <obj_property name="ElementShortName">rst_n</obj_property>
+      <obj_property name="ObjectShortName">rst_n</obj_property>
+   </wvobject>
+   <wvobject fp_name="/BTB_tb/write" type="logic">
+      <obj_property name="ElementShortName">write</obj_property>
+      <obj_property name="ObjectShortName">write</obj_property>
+   </wvobject>
+   <wvobject fp_name="/BTB_tb/IF_pc" type="array">
+      <obj_property name="ElementShortName">IF_pc[31:0]</obj_property>
+      <obj_property name="ObjectShortName">IF_pc[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/BTB_tb/ID_pc" type="array">
+      <obj_property name="ElementShortName">ID_pc[31:0]</obj_property>
+      <obj_property name="ObjectShortName">ID_pc[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/BTB_tb/DUT/pc_imm_in" type="array">
+      <obj_property name="ElementShortName">pc_imm_in[31:0]</obj_property>
+      <obj_property name="ObjectShortName">pc_imm_in[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/BTB_tb/IF_BTBhit" type="logic">
+      <obj_property name="ElementShortName">IF_BTBhit</obj_property>
+      <obj_property name="ObjectShortName">IF_BTBhit</obj_property>
+   </wvobject>
+   <wvobject fp_name="/BTB_tb/DUT/branch_target_buffer" type="array">
+      <obj_property name="ElementShortName">branch_target_buffer[0:15][0:1]</obj_property>
+      <obj_property name="ObjectShortName">branch_target_buffer[0:15][0:1]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+      <wvobject fp_name="/BTB_tb/DUT/branch_target_buffer[0]" type="array">
+         <obj_property name="ElementShortName">[0][0:1]</obj_property>
+         <obj_property name="ObjectShortName">[0][0:1]</obj_property>
+         <obj_property name="isExpanded"></obj_property>
+      </wvobject>
+      <wvobject fp_name="/BTB_tb/DUT/branch_target_buffer[1]" type="array">
+         <obj_property name="ElementShortName">[1][0:1]</obj_property>
+         <obj_property name="ObjectShortName">[1][0:1]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/BTB_tb/DUT/branch_target_buffer[2]" type="array">
+         <obj_property name="ElementShortName">[2][0:1]</obj_property>
+         <obj_property name="ObjectShortName">[2][0:1]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/BTB_tb/DUT/branch_target_buffer[3]" type="array">
+         <obj_property name="ElementShortName">[3][0:1]</obj_property>
+         <obj_property name="ObjectShortName">[3][0:1]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/BTB_tb/DUT/branch_target_buffer[4]" type="array">
+         <obj_property name="ElementShortName">[4][0:1]</obj_property>
+         <obj_property name="ObjectShortName">[4][0:1]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/BTB_tb/DUT/branch_target_buffer[5]" type="array">
+         <obj_property name="ElementShortName">[5][0:1]</obj_property>
+         <obj_property name="ObjectShortName">[5][0:1]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/BTB_tb/DUT/branch_target_buffer[6]" type="array">
+         <obj_property name="ElementShortName">[6][0:1]</obj_property>
+         <obj_property name="ObjectShortName">[6][0:1]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/BTB_tb/DUT/branch_target_buffer[7]" type="array">
+         <obj_property name="ElementShortName">[7][0:1]</obj_property>
+         <obj_property name="ObjectShortName">[7][0:1]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/BTB_tb/DUT/branch_target_buffer[8]" type="array">
+         <obj_property name="ElementShortName">[8][0:1]</obj_property>
+         <obj_property name="ObjectShortName">[8][0:1]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/BTB_tb/DUT/branch_target_buffer[9]" type="array">
+         <obj_property name="ElementShortName">[9][0:1]</obj_property>
+         <obj_property name="ObjectShortName">[9][0:1]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/BTB_tb/DUT/branch_target_buffer[10]" type="array">
+         <obj_property name="ElementShortName">[10][0:1]</obj_property>
+         <obj_property name="ObjectShortName">[10][0:1]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/BTB_tb/DUT/branch_target_buffer[11]" type="array">
+         <obj_property name="ElementShortName">[11][0:1]</obj_property>
+         <obj_property name="ObjectShortName">[11][0:1]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/BTB_tb/DUT/branch_target_buffer[12]" type="array">
+         <obj_property name="ElementShortName">[12][0:1]</obj_property>
+         <obj_property name="ObjectShortName">[12][0:1]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/BTB_tb/DUT/branch_target_buffer[13]" type="array">
+         <obj_property name="ElementShortName">[13][0:1]</obj_property>
+         <obj_property name="ObjectShortName">[13][0:1]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/BTB_tb/DUT/branch_target_buffer[14]" type="array">
+         <obj_property name="ElementShortName">[14][0:1]</obj_property>
+         <obj_property name="ObjectShortName">[14][0:1]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/BTB_tb/DUT/branch_target_buffer[15]" type="array">
+         <obj_property name="ElementShortName">[15][0:1]</obj_property>
+         <obj_property name="ObjectShortName">[15][0:1]</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject fp_name="/BTB_tb/DUT/set_full" type="logic">
+      <obj_property name="ElementShortName">set_full</obj_property>
+      <obj_property name="ObjectShortName">set_full</obj_property>
+   </wvobject>
+   <wvobject fp_name="/BTB_tb/DUT/ID_lines_valid" type="array">
+      <obj_property name="ElementShortName">ID_lines_valid[1:0]</obj_property>
+      <obj_property name="ObjectShortName">ID_lines_valid[1:0]</obj_property>
+   </wvobject>
+</wave_config>

@@ -7,14 +7,23 @@ RTL := $(shell find rtl -name '*.sv')
 TB := $(shell find tb -name '*.sv')
 TOP ?= top
 
+ifeq ($(WAVE), 1)
+SIM_ARGS ?= -nolog -gui
+else
+SIM_ARGS ?= -runall -log ./out/$(TOP)_sim.log
+endif
+
 .PHONY: lint sim
 lint:
 	$(VERILATOR) $(LINT_FLAGS) -f $(SRCS)
 
-sim:
+build:
 	rm -rf ./out/*
-	xvlog -sv $(PKGS) $(RTL) $(TB)
-	xelab $(TOP)_tb -s $(TOP)_tb_sim
-	xsim $(TOP)_tb_sim -runall -log ./out/$(TOP)_sim.log
-	mv xelab* xsim* xvlog* ./out/
-
+	xvlog -sv $(PKGS) $(RTL) $(TB) -nolog
+	xelab $(TOP)_tb -s $(TOP)_tb_sim -debug typical -nolog
+	mv xelab* xvlog* ./out/
+	
+sim:
+	cd ./out/
+	xsim $(TOP)_tb_sim $(SIM_ARGS)
+	
