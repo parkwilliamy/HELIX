@@ -8,9 +8,9 @@ TB := $(shell find tb -name '*.sv')
 TOP ?= top
 
 ifeq ($(WAVE), 1)
-SIM_ARGS ?= -nolog -gui
+SIM_ARGS ?= -nolog -gui -view $(ROOT)wave/$(TOP)_tb_sim.wcfg
 else
-SIM_ARGS ?= -runall -log ./out/$(TOP)_sim.log
+SIM_ARGS ?= -runall -log $(TOP)_sim.log
 endif
 
 .PHONY: lint sim
@@ -21,9 +21,8 @@ build:
 	rm -rf ./out/*
 	xvlog -sv $(PKGS) $(RTL) $(TB) -nolog
 	xelab $(TOP)_tb -s $(TOP)_tb_sim -debug typical -nolog
-	mv xelab* xvlog* ./out/
+	mv xelab* xvlog* xsim* ./out/
 	
 sim:
-	cd ./out/
-	xsim $(TOP)_tb_sim $(SIM_ARGS)
+	cd ./out/ && xsim $(TOP)_tb_sim $(SIM_ARGS)
 	

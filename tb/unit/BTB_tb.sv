@@ -21,9 +21,9 @@ module BTB_tb;
         }
         
         covergroup cg @ (posedge clk);
-            coverpoint IF_pc;
-            coverpoint ID_pc;
-            coverpoint pc_imm_in;
+            coverpoint IF_pc { bins addrs[64] = {[ADDR_START:ADDR_END]}; }
+            coverpoint ID_pc { bins addrs[64] = {[ADDR_START:ADDR_END]}; }
+            coverpoint pc_imm_in { bins addrs[64] = {[ADDR_START:ADDR_END]}; }
         endgroup
         
         function new();
@@ -99,7 +99,7 @@ module BTB_tb;
         repeat (2) @(posedge clk);
         rst_n = 1;
 
-        repeat (10) begin
+        repeat (500) begin
 
             BTBTest.randomize();
             IF_pc = BTBTest.IF_pc;
@@ -112,8 +112,6 @@ module BTB_tb;
         $display("=================================================================");
         $display("Write Tests - No Ways Valid");
         $display("=================================================================");
-
-        write = 1;
 
         crv_write_tests(NO_VALID);
 
@@ -147,17 +145,20 @@ module BTB_tb;
 
         write = 0;
         ID_pc = {{TAG_WIDTH{1'b0}}, set, 2'b0}; 
+        ID_Branch = 1;
         pc_imm_in = 32'hFFFF;
 
         rst_n = 0;
         repeat (2) @(posedge clk);
         rst_n = 1;
 
-        write = 1;
+        @(negedge clk);
 
         case (state)
 
             HALF_VALID: begin
+
+                write = 1;
 
                 for (int i = 0; i < WAYS/2-1; i++) begin
 
@@ -174,6 +175,8 @@ module BTB_tb;
             end
 
             ALL_VALID: begin
+
+                write = 1;
 
                 for (int i = 0; i < WAYS-1; i++) begin
 
@@ -205,9 +208,8 @@ module BTB_tb;
         tag_in = hit_test ? IF_pc[XLEN-1 -: TAG_WIDTH] : {TAG_WIDTH{1'b0}};
         write_addr = (state == ALL_VALID) ? WAYS-1 : WAYS/2-1; // address to write the last valid line of the set
 
-        $display("Tag_In: %h, Write_Addr: %h", tag_in, write_addr);
         populate_set(state, 0, tag_in); // Fill set 0 with 50% or 100% valid lines based on STATE
-        print_set(0);
+        //print_set(0);
         // tag_in == 0 indicates read miss tests, else test is for read hits
 
         @(negedge clk);
@@ -216,7 +218,6 @@ module BTB_tb;
 
             assert(IF_BTBhit);
             assert(!DUT.IF_lines[write_addr].lru);
-            $display("%h", DUT.IF_lines[write_addr]);
             assert(DUT.IF_lines[write_addr].valid);
             assert(DUT.IF_lines[write_addr].tag == IF_pc[XLEN-1 -: TAG_WIDTH]);
             
@@ -229,7 +230,7 @@ module BTB_tb;
         tag_in = IF_BTBhit ? IF_pc[XLEN-1 -: TAG_WIDTH] : {TAG_WIDTH{1'b0}};
 
         populate_set(state, 15, tag_in); // Fill set 0 with 50% or 100% valid lines based on STATE
-        print_set(15);
+        //print_set(15);
         @(negedge clk);
 
         if (tag_in) begin
@@ -252,10 +253,11 @@ module BTB_tb;
         write_addr = (state == ALL_VALID || state == NO_VALID) ? 0 : WAYS/2; // address to write a new line, depending on cache lines stored
 
         populate_set(state, 0, 0); 
-        print_set(0);
+        //print_set(0);
 
-        repeat (10) begin
+        repeat (500) begin
 
+            write = 1;
             BTBTest.randomize(); 
             IF_pc = BTBTest.IF_pc;
             pc_imm_in = BTBTest.pc_imm_in;
@@ -265,14 +267,16 @@ module BTB_tb;
             assert(!DUT.ID_lines[write_addr].lru);
             assert(DUT.ID_lines[write_addr].pc_imm == pc_imm_in);
             if (state == ALL_VALID) assert(lru_unique(0));
+            populate_set(state, 0, 0); 
                 
         end
 
         populate_set(state, 15, 0); 
-        print_set(15);
+        //print_set(15);
 
-        repeat (10) begin
+        repeat (500) begin
 
+            write = 1;
             BTBTest.randomize(); 
             IF_pc = BTBTest.IF_pc;
             pc_imm_in = BTBTest.pc_imm_in;
@@ -282,6 +286,7 @@ module BTB_tb;
             assert(!DUT.ID_lines[write_addr].lru);
             assert(DUT.ID_lines[write_addr].pc_imm == pc_imm_in);
             if (state == ALL_VALID) assert(lru_unique(15));
+            populate_set(state, 15, 0); 
                 
         end
 

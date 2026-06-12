@@ -50,6 +50,8 @@ module BTB
     assign set_full = &ID_lines_valid;
 
     assign IF_BTBhit = |IF_lines_hit;
+
+    logic way_found;
     
 
     // =============================== BTB Reads ================================
@@ -100,7 +102,7 @@ module BTB
 
                 for (int j = 0; j < WAYS; j++) begin
 
-                    branch_target_buffer[i][j] <= {{TAG_WIDTH{1'b0}}, {XLEN{1'b0}}, 1'b1, 0'b0, {LRU_WIDTH{1'b0}}}; // Initialize branch bit to 1, valid bit to 0, LRU counter to 0
+                    branch_target_buffer[i][j] <= {{TAG_WIDTH{1'b0}}, {XLEN{1'b0}}, 1'b1, 1'b0, {LRU_WIDTH{1'b0}}}; // Initialize branch bit to 1, valid bit to 0, LRU counter to 0
 
                 end
 
@@ -112,21 +114,24 @@ module BTB
 
             if (write) begin   
 
+                way_found = 0;
+
                 for (int i = 0; i < WAYS; i++) begin
 
                     // If set still has invalid lines
                     if (!set_full) begin
 
                         // Find first invalid line in cache to replace
-                        if (!ID_lines_valid[i]) begin
+                        if (!ID_lines_valid[i] && !way_found) begin
 
-                            ID_lines[i] <= {ID_tag, pc_imm_in, ID_Branch, 1'b1, {LRU_WIDTH{1'b0}}}; // set LRU counter to 0
+                            branch_target_buffer[ID_index][i] <= {ID_tag, pc_imm_in, ID_Branch, 1'b1, {LRU_WIDTH{1'b0}}}; // set LRU counter to 0
+                            way_found = 1;
 
                         end
 
                         else begin
 
-                            ID_lines[i].lru <= ID_lines[i].lru + 1; // increment LRU counter for lines not touched
+                            branch_target_buffer[ID_index][i].lru <= branch_target_buffer[ID_index][i].lru + 1; // increment LRU counter for lines not touched
 
                         end
 
@@ -137,13 +142,13 @@ module BTB
                         // If cache line was least recently used
                         if (ID_lines[i].lru == {LRU_WIDTH{-1'b1}}) begin
 
-                            ID_lines[i] <= {ID_tag, pc_imm_in, ID_Branch, 1'b1, {LRU_WIDTH{1'b0}}};
+                            branch_target_buffer[ID_index][i] <= {ID_tag, pc_imm_in, ID_Branch, 1'b1, {LRU_WIDTH{1'b0}}};
 
                         end
 
                         else begin
 
-                            ID_lines[i].lru <= ID_lines[i].lru + 1;
+                            branch_target_buffer[ID_index][i].lru <= branch_target_buffer[ID_index][i].lru + 1;
 
                         end
 
