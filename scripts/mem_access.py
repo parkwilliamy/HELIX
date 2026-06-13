@@ -2,7 +2,7 @@ import serial
 
 # Configure the serial port
 ser = serial.Serial(
-    port='COM8',                  # Use COM8
+    port='COM4',                  # Use COM4
     baudrate=1000000,              # Baud rate: 1000000
     bytesize=serial.EIGHTBITS,    # 8 data bits
     parity=serial.PARITY_NONE,    # No parity bit
