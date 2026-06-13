@@ -52,7 +52,7 @@ module BTB
     assign IF_BTBhit = |IF_lines_hit;
 
     logic way_found;
-    
+    logic [INDEX_WIDTH-1:0] victim_idx;
 
     // =============================== BTB Reads ================================
 
@@ -94,6 +94,41 @@ module BTB
 
     // Cache writes to the first invalid line it finds, otherwise, replace line with biggest LRU value
 
+    always_comb begin
+
+        way_found = 0;
+        victim_idx = 'x;
+
+        if (write) begin   
+
+            for (int i = 0; i < WAYS; i++) begin
+
+                // If set still has invalid lines
+                if (!set_full) begin
+
+                    // Find first invalid line in cache to replace
+                    if (!ID_lines_valid[i] && !way_found) begin
+
+                        victim_idx = i;
+                        way_found = 1;
+
+                    end
+
+                end
+
+                else begin
+
+                    // If cache line was least recently used
+                    if (ID_lines[i].lru == {LRU_WIDTH{1'b1}}) victim_idx = i;
+
+                end
+
+            end 
+            
+        end
+
+    end
+
     always_ff @ (posedge clk) begin
 
         if (!rst_n) begin
@@ -114,47 +149,23 @@ module BTB
 
             if (write) begin   
 
-                way_found = 0;
-
                 for (int i = 0; i < WAYS; i++) begin
 
-                    // If set still has invalid lines
-                    if (!set_full) begin
+                    // Find first invalid line in cache to replace
+                    if (i == victim_idx) begin
 
-                        // Find first invalid line in cache to replace
-                        if (!ID_lines_valid[i] && !way_found) begin
-
-                            branch_target_buffer[ID_index][i] <= {ID_tag, pc_imm_in, ID_Branch, 1'b1, {LRU_WIDTH{1'b0}}}; // set LRU counter to 0
-                            way_found = 1;
-
-                        end
-
-                        else begin
-
-                            branch_target_buffer[ID_index][i].lru <= branch_target_buffer[ID_index][i].lru + 1; // increment LRU counter for lines not touched
-
-                        end
+                        branch_target_buffer[ID_index][i] <= {ID_tag, pc_imm_in, ID_Branch, 1'b1, {LRU_WIDTH{1'b0}}}; // set LRU counter to 0
 
                     end
 
                     else begin
 
-                        // If cache line was least recently used
-                        if (ID_lines[i].lru == {LRU_WIDTH{-1'b1}}) begin
+                        branch_target_buffer[ID_index][i].lru <= branch_target_buffer[ID_index][i].lru + 1; // increment LRU counter for lines not touched
 
-                            branch_target_buffer[ID_index][i] <= {ID_tag, pc_imm_in, ID_Branch, 1'b1, {LRU_WIDTH{1'b0}}};
+                    end 
 
-                        end
+                end
 
-                        else begin
-
-                            branch_target_buffer[ID_index][i].lru <= branch_target_buffer[ID_index][i].lru + 1;
-
-                        end
-
-                    end
-
-                end 
             end
             
         end

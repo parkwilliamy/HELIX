@@ -2,15 +2,22 @@
 
 # STEP#1: define the output directory area.
 
-set outputDir ./synth
+# --- Argument handling ---
+if {$argc != 1} {
+    puts stderr "Usage: vivado -mode batch -source synth.tcl -tclargs ./synth"
+    exit 1
+}
+set outputDir [lindex $argv 0]
 
 # STEP#2: setup design sources and constraints
 
+set_param general.maxThreads 8
+source scripts/startup.tcl -notrace
 read_verilog -sv [ glob ./packages/*.sv ] 
 read_verilog -sv [ glob ./rtl/mem/*.sv ] 
 read_verilog -sv [ glob ./rtl/system/*.sv ]
 read_verilog -sv [ glob ./rtl/unit/*.sv ]
-read_xdc ./synth/Basys-3-Master.xdc
+read_xdc $outputDir/Basys-3-Master.xdc
 
 # STEP#3: run synthesis, write design checkpoint, netlist optimzation
 # Note: assign DONT_TOUCH property to RTL you don't want optimized away

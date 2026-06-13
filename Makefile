@@ -13,7 +13,7 @@ else
 SIM_ARGS ?= -runall -log $(TOP)_sim.log
 endif
 
-.PHONY: lint sim
+.PHONY: lint sim synth fpga
 lint:
 	$(VERILATOR) $(LINT_FLAGS) -f $(SRCS)
 
@@ -25,4 +25,9 @@ build:
 	
 sim:
 	cd ./out/ && xsim $(TOP)_tb_sim $(SIM_ARGS)
-	
+synth:
+	vivado -mode batch -source ./scripts/synth.tcl -nolog -nojournal -notrace -tclargs ./synth
+fpga:
+	vivado -mode batch -source ./scripts/place.tcl -nolog -nojournal -notrace -tclargs ./synth
+	vivado -mode batch -source ./scripts/route.tcl -nolog -nojournal -notrace -tclargs ./synth
+	vivado -mode batch -source ./scripts/bitgen.tcl -nolog -nojournal -notrace -tclargs ./synth

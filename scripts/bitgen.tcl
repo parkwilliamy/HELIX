@@ -1,4 +1,10 @@
-set outputDir ./synth
+# --- Argument handling ---
+if {$argc != 1} {
+    puts stderr "Usage: vivado -mode batch -source bitgen.tcl -tclargs ./synth"
+    exit 1
+}
+set outputDir [lindex $argv 0]
+set_param general.maxThreads 8
 
 open_checkpoint $outputDir/checkpoint/post_route.dcp
 

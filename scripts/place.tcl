@@ -1,6 +1,12 @@
 # STEP#1: placement and physical optimzation
+# --- Argument handling ---
+if {$argc != 1} {
+    puts stderr "Usage: vivado -mode batch -source place.tcl -tclargs ./synth"
+    exit 1
+}
+set outputDir [lindex $argv 0]
+set_param general.maxThreads 8
 
-set outputDir ./synth
 open_checkpoint $outputDir/checkpoint/post_synth.dcp
 opt_design -aggressive_remap -resynth_remap -verbose
 place_design
