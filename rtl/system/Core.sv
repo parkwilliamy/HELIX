@@ -201,7 +201,7 @@ module Core (
     );
 
     ALUControl INST5 (
-        .sub_bit(ID_funct7[5]), 
+        .sub_bit(ID_funct7[30]), 
         .funct3(ID_funct3), 
         .ALUOp(ID_ALUOp), 
         .regbit(ID_opcode[5]), 
