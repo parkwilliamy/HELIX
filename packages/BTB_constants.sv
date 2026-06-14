@@ -17,7 +17,7 @@ package BTB_constants;
         logic [XLEN-1:0] pc_imm;
         logic branch; // 0 means jump, 1 means branch
         logic valid; // 1 means the pc_imm value is valid
-        logic [LRU_WIDTH-1:0] lru; // LRU counter, where 0 indicates the least recently used line
+        logic [LRU_WIDTH-1:0] lru; // LRU counter, where 0 indicates the most recently used line
     } BTB_line;
 
     // ==================================== TESTBENCH SPECIFIC DEFINITIONS ====================================

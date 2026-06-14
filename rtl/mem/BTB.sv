@@ -52,7 +52,7 @@ module BTB
     assign IF_BTBhit = |IF_lines_hit;
 
     logic way_found;
-    logic [INDEX_WIDTH-1:0] victim_idx;
+    logic [LRU_WIDTH-1:0] victim_idx;
 
     // =============================== BTB Reads ================================
 
@@ -119,7 +119,12 @@ module BTB
                 else begin
 
                     // If cache line was least recently used
-                    if (ID_lines[i].lru == {LRU_WIDTH{1'b1}}) victim_idx = i;
+                    if (ID_lines[i].lru == {LRU_WIDTH{1'b1}}) begin
+
+                        victim_idx = i;
+                        break;
+                        
+                    end
 
                 end
 
@@ -158,11 +163,11 @@ module BTB
 
                     end
 
-                    else begin
+                    else if (branch_target_buffer[ID_index][i].valid) begin   // only age valid lines
 
-                        branch_target_buffer[ID_index][i].lru <= branch_target_buffer[ID_index][i].lru + 1; // increment LRU counter for lines not touched
+                        branch_target_buffer[ID_index][i].lru <= branch_target_buffer[ID_index][i].lru + 1;
 
-                    end 
+                    end
 
                 end
 

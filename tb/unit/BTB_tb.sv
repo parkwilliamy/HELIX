@@ -267,7 +267,6 @@ module BTB_tb;
             assert(!DUT.ID_lines[write_addr].lru);
             assert(DUT.ID_lines[write_addr].pc_imm == pc_imm_in);
             if (state == ALL_VALID) assert(lru_unique(0));
-            if (write_addr == 0) $display("evicted way 0");
             populate_set(state, 0, 0); 
                 
         end

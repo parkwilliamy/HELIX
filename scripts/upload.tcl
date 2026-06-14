@@ -10,11 +10,14 @@
 # ============================================================
 
 # --- Argument handling ---
-if {$argc != 1} {
-    puts stderr "Usage: vivado -mode batch -source program_flash_basys3.tcl -tclargs <path/to/design.bit>"
+if {$argc < 1 || $argc > 2} {
+    puts stderr "Usage: vivado -mode batch -source upload.tcl -tclargs <path/to/design.bit> \[flash_part\]"
     exit 1
 }
 set bit_file [lindex $argv 0]
+set mem_part [expr {$argc >= 2 ? [lindex $argv 1] : "mx25l3273f-spi-x1_x2_x4"}]
+# Look at flash memory part on FPGA and write down name here, if it doesn't work 
+# you may need to type it into Vivado's hardware manager and see if it has any aliases
 
 if {![file exists $bit_file]} {
     puts stderr "ERROR: bitstream file not found: $bit_file"
@@ -40,9 +43,9 @@ refresh_hw_device [current_hw_device]
 
 # --- Step 3: Associate the flash (cfgmem) part ---
 create_hw_cfgmem -hw_device [current_hw_device] \
-    [lindex [get_cfgmem_parts {s25fl032p-spi-x1_x2_x4}] 0]
+    [lindex [get_cfgmem_parts $mem_part] 0]
 
-set cfgmem [get_property PROGRAM.HW_CFGMEM [current_hw_device]]
+set cfgmem [ get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices xc7a35t_0] 0]]
 
 # --- Step 4: Programming options ---
 set_property PROGRAM.FILES         $mcs_file    $cfgmem
@@ -54,7 +57,9 @@ set_property PROGRAM.VERIFY        1            $cfgmem
 set_property PROGRAM.CHECKSUM      0            $cfgmem
 
 # --- Step 5: Program flash ---
-program_hw_cfgmem -hw_cfgmem $cfgmem
+create_hw_bitstream -hw_device [current_hw_device] [get_property PROGRAM.HW_CFGMEM_BITFILE [current_hw_device]]
+program_hw_devices [current_hw_device]
+refresh_hw_device [current_hw_device]
 
 # --- Step 6: Boot from flash now ---
 boot_hw_device [current_hw_device]
