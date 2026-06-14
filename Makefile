@@ -1,9 +1,10 @@
 ROOT := $(dir $(realpath $(lastword $(MAKEFILE_LIST))))
 VERILATOR := verilator
 LINT_FLAGS := --lint-only -Wall -Wno-fatal --top-module top
+COMPLIANCE_FLAGS := --cc --exe --build -j 0 --Mdir compliance/obj_dir --top-module top_tb
 FIRST_PKG := packages/top_constants.sv
 PKGS := $(FIRST_PKG) $(filter-out $(FIRST_PKG),$(shell find packages -name '*.sv'))
-RTL := $(shell find rtl -name '*.sv')
+RTL := rtl/mem/*.sv rtl/system/*.sv rtl/unit/*.sv
 TB := $(shell find tb -name '*.sv')
 TOP ?= top
 
@@ -13,7 +14,7 @@ else
 SIM_ARGS ?= -runall -log $(TOP)_sim.log
 endif
 
-.PHONY: lint sim synth fpga
+.PHONY: lint sim compliance synth fpga
 lint:
 	$(VERILATOR) $(LINT_FLAGS) -f $(SRCS)
 
@@ -25,6 +26,8 @@ build:
 	
 sim:
 	cd ./out/ && xsim $(TOP)_tb_sim $(SIM_ARGS)
+compliance:
+	verilator $(COMPLIANCE_FLAGS) -I./packages -I./rtl/mem/ $(PKGS) $(RTL) ./rtl/sim/*.sv ../tb/system/top_tb.sv compliance/top_tb.cpp -o top_tb_sim
 synth:
 	vivado -mode batch -source ./scripts/synth.tcl -nolog -nojournal -notrace -tclargs ./synth
 fpga:

@@ -1,11 +1,12 @@
 `timescale 1ns/1ps
 
 import top_constants::*;
+import mem_constants::*;
 
 module Core (
     input logic rst_n, clk,
     input logic [XLEN-1:0] doa, dob,
-    output logic [15:0] addra, addrb, 
+    output logic [ADDR_WIDTH-1:0] addra, addrb, 
     output logic [3:0] web, 
     output logic [XLEN-1:0] dib 
 );
@@ -164,7 +165,7 @@ module Core (
     assign ID_rs1 = ID_instruction[19:15];
     assign ID_rs2 = ID_instruction[24:20];
     assign ID_funct7 = ID_instruction[XLEN-1:25];
-    assign addra = ID_Stall ? ID_pc[15:0] : IF_pc[15:0]; // fetch instruction from ID_pc if pipeline is stalled
+    assign addra = ID_Stall ? ID_pc[ADDR_WIDTH-1:0] : IF_pc[ADDR_WIDTH-1:0]; // fetch instruction from ID_pc if pipeline is stalled
     
     ControlUnit INST2 (
         .opcode(ID_opcode), 
@@ -253,7 +254,7 @@ module Core (
     assign MEM_ALU_result_wire = MEM_ALU_result;
     assign MEM_funct3_wire = MEM_funct3;
     assign MEM_MemWrite_wire = MEM_MemWrite;
-    assign addrb = MEM_ALU_result[15:0];
+    assign addrb = MEM_ALU_result[ADDR_WIDTH-1:0];
 
     Store INST8 (
         .MemWrite(MEM_MemWrite_wire),

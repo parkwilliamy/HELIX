@@ -22,9 +22,9 @@ module top (
     // BRAM (word addressable)
 
     logic [3:0] wea, web;
-    logic [15:0] addra, addrb; // 20 KB for IMEM, 12 KB for DMEM
-    logic [15:0] addra_cpu, addrb_cpu;
-    logic [15:0] addra_mem, addrb_mem;
+    logic [ADDR_WIDTH-1:0] addra, addrb; // 20 KB for IMEM, 12 KB for DMEM
+    logic [ADDR_WIDTH-1:0] addra_cpu, addrb_cpu;
+    logic [ADDR_WIDTH-1:0] addra_mem, addrb_mem;
     logic [XLEN-1:0] doa, dob; // Port A is IMEM, Port B is DMEM
     logic [XLEN-1:0] dia, dib;
     
@@ -41,8 +41,8 @@ module top (
         .clkb(clk_out1),
         .wea(wea),
         .web(web),
-        .addra(row_a[12:0]),
-        .addrb(row_b[12:0]),
+        .addra(row_a[ADDR_WIDTH-3:0]),
+        .addrb(row_b[ADDR_WIDTH-3:0]),
         .dina(dia),
         .dinb(dib),
         .douta(doa),

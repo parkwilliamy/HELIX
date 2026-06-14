@@ -1,37 +1,53 @@
 `timescale 1ns/1ps
 
+import top_constants::*;
+import mem_constants::*;
+
 module top_tb (input rst_n, clk);
 
-    //reg rst_n, clk; 
-    logic [27:0] clk_cycles;
-    logic [12:0] retired_instructions, predictions_made, correct_predictions, invalid_clk_cycles; 
-    top DUT (
-        .rst_n(rst_n),
+    logic [3:0] wea, web;
+    logic [ADDR_WIDTH-1:0] addra, addrb; // 20 KB for IMEM, 12 KB for DMEM
+    logic [ADDR_WIDTH-1:0] addra_cpu, addrb_cpu;
+    logic [XLEN-1:0] doa, dob; // Port A is IMEM, Port B is DMEM
+    logic [XLEN-1:0] dia, dib;
+    
+    logic [ADDR_WIDTH-1:0] row_a, row_b;
+    
+    assign row_a = addra_cpu >> 2;
+    assign row_b = addrb_cpu >> 2;
+
+    BRAM INST1 ( 
         .clk(clk),
-        .clk_cycles(clk_cycles),
-        .retired_instructions(retired_instructions),
-        .predictions_made(predictions_made),
-        .correct_predictions(correct_predictions),
-        .invalid_clk_cycles(invalid_clk_cycles)
+        .wea(wea),
+        .web(web),
+        .addra(row_a[ADDR_WIDTH-3:0]),
+        .addrb(row_b[ADDR_WIDTH-3:0]),
+        .dia(dia),
+        .dib(dib),
+        .doa(doa),
+        .dob(dob)
     );
+
+    Core INST2 (
+        .clk(clk),
+        .rst_n(rst_n),
+        .doa(doa),
+        .dob(dob),
+        .addra(addra_cpu),
+        .addrb(addrb_cpu),
+        .web(web),
+        .dib(dib)
+    );
+
 
     logic [1000*8:1] program_file;  
     logic [31:0] RVMODEL_DATA_BEGIN, RVMODEL_DATA_END, tohost;
     // signature region start, end, and memory addr to check for program completion
-    
-    // Clock generation
-    initial begin
-        //clk = 0;
-        //forever #5 clk = ~clk;  // 100 MHz
-    end
 
     integer i;
     integer fd;
 
     initial begin
-
-        //$dumpfile("sim.vcd");        // Specify the output file name
-        //$dumpvars(0, top_tb);        // Dump all variables in top_tb module
 
         // Argument loading
 
@@ -42,7 +58,7 @@ module top_tb (input rst_n, clk);
 
         $display("Loading program from %s", program_file);
 
-        $readmemh(program_file, DUT.INST1.mem, 0);
+        $readmemh(program_file, INST1.mem, 0);
 
         if (!$value$plusargs("begin_signature=%h", RVMODEL_DATA_BEGIN)) begin
             $display("No RVMODEL_DATA_BEGIN address specified! Using default address 0x00005000");
@@ -65,14 +81,10 @@ module top_tb (input rst_n, clk);
         
         $display("tohost: %h", tohost);
 
-        //rst_n = 0;
-        //#20;
-        //rst_n = 1;
-
     end
 
     always @ (posedge clk) begin
-        if (DUT.INST1.mem[tohost/4] == 32'h00000001) begin
+        if (INST1.mem[tohost/4] == 32'h00000001) begin
 
             dump_sigfile();
             $finish; // termination condition
@@ -85,7 +97,7 @@ module top_tb (input rst_n, clk);
             fd = $fopen("DUT-RV32I_test.signature", "w");
 
             for (i=RVMODEL_DATA_BEGIN; i < RVMODEL_DATA_END; i=i+4) begin
-                $fdisplay(fd, "%08h", (DUT.INST1.mem[i/4]));
+                $fdisplay(fd, "%08h", (INST1.mem[i/4]));
             end
 
             $fclose(fd);

@@ -109,7 +109,7 @@ module BTB
                     // Find first invalid line in cache to replace
                     if (!ID_lines_valid[i] && !way_found) begin
 
-                        victim_idx = i;
+                        victim_idx = i[LRU_WIDTH-1:0];
                         way_found = 1;
 
                     end
@@ -121,7 +121,7 @@ module BTB
                     // If cache line was least recently used
                     if (ID_lines[i].lru == {LRU_WIDTH{1'b1}}) begin
 
-                        victim_idx = i;
+                        victim_idx = i[LRU_WIDTH-1:0];
                         break;
                         
                     end
@@ -157,7 +157,7 @@ module BTB
                 for (int i = 0; i < WAYS; i++) begin
 
                     // Find first invalid line in cache to replace
-                    if (i == victim_idx) begin
+                    if (i[LRU_WIDTH-1:0] == victim_idx) begin
 
                         branch_target_buffer[ID_index][i] <= {ID_tag, pc_imm_in, ID_Branch, 1'b1, {LRU_WIDTH{1'b0}}}; // set LRU counter to 0
 
