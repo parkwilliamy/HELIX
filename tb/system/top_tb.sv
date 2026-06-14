@@ -3,8 +3,8 @@
 module top_tb (input rst_n, clk);
 
     //reg rst_n, clk; 
-    reg [27:0] clk_cycles;
-    reg [12:0] retired_instructions, predictions_made, correct_predictions, invalid_clk_cycles; 
+    logic [27:0] clk_cycles;
+    logic [12:0] retired_instructions, predictions_made, correct_predictions, invalid_clk_cycles; 
     top DUT (
         .rst_n(rst_n),
         .clk(clk),
@@ -15,8 +15,8 @@ module top_tb (input rst_n, clk);
         .invalid_clk_cycles(invalid_clk_cycles)
     );
 
-    reg [1000*8:1] program_file;  
-    reg [31:0] RVMODEL_DATA_BEGIN, RVMODEL_DATA_END, tohost;
+    logic [1000*8:1] program_file;  
+    logic [31:0] RVMODEL_DATA_BEGIN, RVMODEL_DATA_END, tohost;
     // signature region start, end, and memory addr to check for program completion
     
     // Clock generation

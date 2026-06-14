@@ -3,15 +3,16 @@
 module BTB_tb;
 
     import BTB_constants::*;
+    import mem_constants::*;
 
     class BTBInputs;
 
         rand logic [XLEN-1:0] IF_pc, ID_pc, pc_imm_in;
 
         constraint addr_space {
-            IF_pc inside {[ADDR_START:ADDR_END]};
-            ID_pc inside {[ADDR_START:ADDR_END]};
-            pc_imm_in inside {[ADDR_START:ADDR_END]};
+            IF_pc inside {[IMEM_START:IMEM_END]};
+            ID_pc inside {[IMEM_START:IMEM_END]};
+            pc_imm_in inside {[IMEM_START:IMEM_END]};
         }
 
         constraint addr_alignment {
@@ -21,9 +22,9 @@ module BTB_tb;
         }
         
         covergroup cg @ (posedge clk);
-            coverpoint IF_pc { bins addrs[64] = {[ADDR_START:ADDR_END]}; }
-            coverpoint ID_pc { bins addrs[64] = {[ADDR_START:ADDR_END]}; }
-            coverpoint pc_imm_in { bins addrs[64] = {[ADDR_START:ADDR_END]}; }
+            coverpoint IF_pc { bins addrs[64] = {[IMEM_START:IMEM_END]}; }
+            coverpoint ID_pc { bins addrs[64] = {[IMEM_START:IMEM_END]}; }
+            coverpoint pc_imm_in { bins addrs[64] = {[IMEM_START:IMEM_END]}; }
         endgroup
         
         function new();
@@ -64,6 +65,7 @@ module BTB_tb;
         repeat (2) @(posedge clk);
         rst_n = 1;
 
+        $display("=================================================================");
         $display("DIRECTED TESTS");
         $display("=================================================================");
         $display("Read Miss - 50%% Ways Valid");

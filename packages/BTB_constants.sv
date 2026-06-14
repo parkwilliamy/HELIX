@@ -22,10 +22,6 @@ package BTB_constants;
 
     // ==================================== TESTBENCH SPECIFIC DEFINITIONS ====================================
 
-    localparam logic [XLEN-1:0] ADDR_START = 32'h0000_0000,
-                                MEM_SIZE = 32'h0000_5000, // 20 KiB instruction memory
-                                ADDR_END = ADDR_START + MEM_SIZE;
-
     typedef enum logic [1:0] {
         NO_VALID = 2'b00,
         HALF_VALID = 2'b01,

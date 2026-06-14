@@ -8,6 +8,7 @@
 *.vcd
 *.dcp
 dfx_runtime.txt
+clockInfo.txt
 
 # Vivado database
 .cache/
