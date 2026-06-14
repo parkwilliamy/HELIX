@@ -1,6 +1,6 @@
 `timescale 1ns/1ps
 
-import constants::*;
+import top_constants::*;
 
 module MemAccess (
     input logic clk, rst_n, byte_done,

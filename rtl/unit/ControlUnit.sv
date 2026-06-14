@@ -1,6 +1,6 @@
 `timescale 1ns/1ps
 
-import constants::*;
+import top_constants::*;
 
 module ControlUnit (
     input logic [6:0] opcode,

@@ -1,6 +1,6 @@
 `timescale 1ns/1ps
 
-import constants::*;
+import top_constants::*;
 
 module ForwardUnit (
     input logic [XLEN-1:0] MEM_ALU_result, MEM_pc_4, MEM_pc_imm, WB_rd_write_data,

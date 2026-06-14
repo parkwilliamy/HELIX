@@ -1,6 +1,6 @@
 `timescale 1ns/1ps
 
-import constants::*;
+import top_constants::*;
 
 module top (
     input logic clk, rst_n_mem, rst_n_cpu, rst_clk, mem_control, RX,

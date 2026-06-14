@@ -1,8 +1,9 @@
 `timescale 1ns/1ps
 
-import constants::*;
-
-module BTB (
+module BTB
+    import BTB_constants::*;
+    import top_constants::*;
+(
     input logic clk, rst_n, write, ID_Branch,
     input logic [XLEN-1:2] IF_pc, ID_pc,
     input logic [XLEN-1:0] pc_imm_in, // Computed branch target address to write to BTB during ID
@@ -10,22 +11,6 @@ module BTB (
     output logic IF_BTBhit, // 0 if branch target address wasn't found for a given branch instruction, 1 otherwise
     output logic IF_Branch, IF_Jump // These signals indicate whether the fetched target address was for a branch or jump instruction
 );
-
-    // 2-way set associative cache
-    localparam int LINES = 32, 
-                WAYS = 2, 
-                SETS = LINES / WAYS,
-                INDEX_WIDTH = $clog2(SETS),
-                TAG_WIDTH = (XLEN-2) - INDEX_WIDTH, // Ignore lower 2 bits of PC since redundant with byte alignment
-                LRU_WIDTH = $clog2(WAYS);
-
-    typedef struct packed { // BTB cache line layout
-        logic [TAG_WIDTH-1:0] tag;
-        logic [XLEN-1:0] pc_imm;
-        logic branch; // 0 means jump, 1 means branch
-        logic valid; // 1 means the pc_imm value is valid
-        logic [LRU_WIDTH-1:0] lru; // LRU counter, where 0 indicates the least recently used line
-    } BTB_line;
 
     BTB_line branch_target_buffer [SETS][WAYS]; 
 
@@ -65,7 +50,9 @@ module BTB (
     assign set_full = &ID_lines_valid;
 
     assign IF_BTBhit = |IF_lines_hit;
-    
+
+    logic way_found;
+    logic [LRU_WIDTH-1:0] victim_idx;
 
     // =============================== BTB Reads ================================
 
@@ -107,6 +94,46 @@ module BTB (
 
     // Cache writes to the first invalid line it finds, otherwise, replace line with biggest LRU value
 
+    always_comb begin
+
+        way_found = 0;
+        victim_idx = 'x;
+
+        if (write) begin   
+
+            for (int i = 0; i < WAYS; i++) begin
+
+                // If set still has invalid lines
+                if (!set_full) begin
+
+                    // Find first invalid line in cache to replace
+                    if (!ID_lines_valid[i] && !way_found) begin
+
+                        victim_idx = i;
+                        way_found = 1;
+
+                    end
+
+                end
+
+                else begin
+
+                    // If cache line was least recently used
+                    if (ID_lines[i].lru == {LRU_WIDTH{1'b1}}) begin
+
+                        victim_idx = i;
+                        break;
+                        
+                    end
+
+                end
+
+            end 
+            
+        end
+
+    end
+
     always_ff @ (posedge clk) begin
 
         if (!rst_n) begin
@@ -129,42 +156,21 @@ module BTB (
 
                 for (int i = 0; i < WAYS; i++) begin
 
-                    // If set still has invalid lines
-                    if (!set_full) begin
+                    // Find first invalid line in cache to replace
+                    if (i == victim_idx) begin
 
-                        // Find first invalid line in cache to replace
-                        if (!ID_lines_valid[i]) begin
-
-                            ID_lines[i] <= {ID_tag, pc_imm_in, ID_Branch, 1'b1, {LRU_WIDTH{1'b0}}}; // set LRU counter to 0
-
-                        end
-
-                        else begin
-
-                            ID_lines[i].lru <= ID_lines[i].lru + 1; // increment LRU counter for lines not touched
-
-                        end
+                        branch_target_buffer[ID_index][i] <= {ID_tag, pc_imm_in, ID_Branch, 1'b1, {LRU_WIDTH{1'b0}}}; // set LRU counter to 0
 
                     end
 
-                    else begin
+                    else if (branch_target_buffer[ID_index][i].valid) begin   // only age valid lines
 
-                        // If cache line was least recently used
-                        if (ID_lines[i].lru == {LRU_WIDTH{-1'b1}}) begin
-
-                            ID_lines[i] <= {ID_tag, pc_imm_in, ID_Branch, 1'b1, {LRU_WIDTH{1'b0}}};
-
-                        end
-
-                        else begin
-
-                            ID_lines[i].lru <= ID_lines[i].lru + 1;
-
-                        end
+                        branch_target_buffer[ID_index][i].lru <= branch_target_buffer[ID_index][i].lru + 1;
 
                     end
 
-                end 
+                end
+
             end
             
         end

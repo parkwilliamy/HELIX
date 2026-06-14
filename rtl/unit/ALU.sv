@@ -1,6 +1,6 @@
 `timescale 1ns/1ps
 
-import constants::*;
+import top_constants::*;
 
 module ALU (
     input logic [XLEN-1:0] op1, op2,
