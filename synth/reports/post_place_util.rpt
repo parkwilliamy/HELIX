@@ -1,7 +1,7 @@
 Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
 ---------------------------------------------------------------------------------------------------------------------------------------------
 | Tool Version : Vivado v.2025.2 (win64) Build 6299465 Fri Nov 14 19:35:11 GMT 2025
-| Date         : Sat Jun 13 23:37:30 2026
+| Date         : Mon Jun 15 13:42:54 2026
 | Host         : NB-WYPARK running 64-bit major release  (build 9200)
 | Command      : report_utilization -file ./synth/reports/post_place_util.rpt
 | Design       : top
@@ -32,11 +32,11 @@ Table of Contents
 +-------------------------+------+-------+------------+-----------+-------+
 |        Site Type        | Used | Fixed | Prohibited | Available | Util% |
 +-------------------------+------+-------+------------+-----------+-------+
-| Slice LUTs              | 4964 |     0 |          0 |     20800 | 23.87 |
-|   LUT as Logic          | 4964 |     0 |          0 |     20800 | 23.87 |
+| Slice LUTs              | 4969 |     0 |          0 |     20800 | 23.89 |
+|   LUT as Logic          | 4969 |     0 |          0 |     20800 | 23.89 |
 |   LUT as Memory         |    0 |     0 |          0 |      9600 |  0.00 |
-| Slice Registers         | 4430 |     0 |          0 |     41600 | 10.65 |
-|   Register as Flip Flop | 4427 |     0 |          0 |     41600 | 10.64 |
+| Slice Registers         | 4428 |     0 |          0 |     41600 | 10.64 |
+|   Register as Flip Flop | 4425 |     0 |          0 |     41600 | 10.64 |
 |   Register as Latch     |    3 |     0 |          0 |     41600 | <0.01 |
 | F7 Muxes                |  619 |     0 |          0 |     16300 |  3.80 |
 | F8 Muxes                |  268 |     0 |          0 |      8150 |  3.29 |
@@ -61,7 +61,7 @@ Table of Contents
 | 0     |          Yes |           - |          Set |
 | 11    |          Yes |           - |        Reset |
 | 380   |          Yes |         Set |            - |
-| 4039  |          Yes |       Reset |            - |
+| 4037  |          Yes |       Reset |            - |
 +-------+--------------+-------------+--------------+
 
 
@@ -71,13 +71,13 @@ Table of Contents
 +--------------------------------------------+------+-------+------------+-----------+-------+
 |                  Site Type                 | Used | Fixed | Prohibited | Available | Util% |
 +--------------------------------------------+------+-------+------------+-----------+-------+
-| Slice                                      | 1934 |     0 |          0 |      8150 | 23.73 |
-|   SLICEL                                   | 1356 |     0 |            |           |       |
-|   SLICEM                                   |  578 |     0 |            |           |       |
-| LUT as Logic                               | 4964 |     0 |          0 |     20800 | 23.87 |
+| Slice                                      | 1903 |     0 |          0 |      8150 | 23.35 |
+|   SLICEL                                   | 1340 |     0 |            |           |       |
+|   SLICEM                                   |  563 |     0 |            |           |       |
+| LUT as Logic                               | 4969 |     0 |          0 |     20800 | 23.89 |
 |   using O5 output only                     |    0 |       |            |           |       |
-|   using O6 output only                     | 4384 |       |            |           |       |
-|   using O5 and O6                          |  580 |       |            |           |       |
+|   using O6 output only                     | 4397 |       |            |           |       |
+|   using O5 and O6                          |  572 |       |            |           |       |
 | LUT as Memory                              |    0 |     0 |          0 |      9600 |  0.00 |
 |   LUT as Distributed RAM                   |    0 |     0 |            |           |       |
 |     using O5 output only                   |    0 |       |            |           |       |
@@ -87,11 +87,11 @@ Table of Contents
 |     using O5 output only                   |    0 |       |            |           |       |
 |     using O6 output only                   |    0 |       |            |           |       |
 |     using O5 and O6                        |    0 |       |            |           |       |
-| Slice Registers                            | 4430 |     0 |          0 |     41600 | 10.65 |
-|   Register driven from within the Slice    | 2183 |       |            |           |       |
-|   Register driven from outside the Slice   | 2247 |       |            |           |       |
-|     LUT in front of the register is unused | 1654 |       |            |           |       |
-|     LUT in front of the register is used   |  593 |       |            |           |       |
+| Slice Registers                            | 4428 |     0 |          0 |     41600 | 10.64 |
+|   Register driven from within the Slice    | 2188 |       |            |           |       |
+|   Register driven from outside the Slice   | 2240 |       |            |           |       |
+|     LUT in front of the register is unused | 1597 |       |            |           |       |
+|     LUT in front of the register is used   |  643 |       |            |           |       |
 +--------------------------------------------+------+-------+------------+-----------+-------+
 
 
@@ -186,14 +186,14 @@ Table of Contents
 +------------+------+---------------------+
 |  Ref Name  | Used | Functional Category |
 +------------+------+---------------------+
-| FDRE       | 4039 |        Flop & Latch |
+| FDRE       | 4037 |        Flop & Latch |
 | LUT6       | 3310 |                 LUT |
 | LUT5       |  891 |                 LUT |
-| LUT3       |  714 |                 LUT |
+| LUT3       |  712 |                 LUT |
 | MUXF7      |  619 |               MuxFx |
 | FDSE       |  380 |        Flop & Latch |
 | LUT2       |  320 |                 LUT |
-| LUT4       |  300 |                 LUT |
+| LUT4       |  299 |                 LUT |
 | MUXF8      |  268 |               MuxFx |
 | CARRY4     |   92 |          CarryLogic |
 | OBUF       |   14 |                  IO |

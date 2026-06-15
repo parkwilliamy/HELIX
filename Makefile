@@ -14,7 +14,7 @@ else
 SIM_ARGS ?= -runall -log $(TOP)_sim.log
 endif
 
-.PHONY: lint sim compliance synth fpga
+.PHONY: lint sim compliance synth fpga bit
 lint:
 	$(VERILATOR) $(LINT_FLAGS) -f $(SRCS)
 
@@ -36,3 +36,6 @@ fpga:
 	vivado -mode batch -source ./scripts/route.tcl -nolog -nojournal -notrace -tclargs ./synth
 	vivado -mode batch -source ./scripts/bitgen.tcl -nolog -nojournal -notrace -tclargs ./synth
 	rm dfx_runtime.txt
+bit:
+	vivado -mode batch -source scripts/upload.tcl -nolog -nojournal -notrace -tclargs "synth/bitstream/R500.bit"
+
