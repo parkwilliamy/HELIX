@@ -1,7 +1,7 @@
 Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
 ---------------------------------------------------------------------------------------------------------------------------------------------
 | Tool Version : Vivado v.2025.2 (win64) Build 6299465 Fri Nov 14 19:35:11 GMT 2025
-| Date         : Mon Jun 15 13:44:24 2026
+| Date         : Mon Jun 15 16:57:37 2026
 | Host         : NB-WYPARK running 64-bit major release  (build 9200)
 | Command      : report_timing_summary -file ./synth/reports/post_route_timing_summary.rpt
 | Design       : top
@@ -49,10 +49,10 @@ check_timing report
 
 Table of Contents
 -----------------
-1. checking no_clock (48)
+1. checking no_clock (0)
 2. checking constant_clock (0)
 3. checking pulse_width_clock (0)
-4. checking unconstrained_internal_endpoints (3)
+4. checking unconstrained_internal_endpoints (0)
 5. checking no_input_delay (5)
 6. checking no_output_delay (14)
 7. checking multiple_clock (0)
@@ -62,39 +62,9 @@ Table of Contents
 11. checking partial_output_delay (0)
 12. checking latch_loops (0)
 
-1. checking no_clock (48)
--------------------------
- There are 3 register/latch pins with no clock driven by root clock pin: INST2/U0/inst_blk_mem_gen/gnbram.gnativebmg.native_blk_mem_gen/valid.cstr/has_mux_a.A/no_softecc_sel_reg.ce_pri.sel_pipe_reg[1]/Q (HIGH)
-
- There are 3 register/latch pins with no clock driven by root clock pin: INST2/U0/inst_blk_mem_gen/gnbram.gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[0].ram.r/prim_init.ram/DEVICE_7SERIES.NO_BMM_INFO.TRUE_DP.SIMPLE_PRIM36.ram/DOADO[0] (HIGH)
-
- There are 3 register/latch pins with no clock driven by root clock pin: INST2/U0/inst_blk_mem_gen/gnbram.gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[0].ram.r/prim_init.ram/DEVICE_7SERIES.NO_BMM_INFO.TRUE_DP.SIMPLE_PRIM36.ram/DOADO[1] (HIGH)
-
- There are 3 register/latch pins with no clock driven by root clock pin: INST2/U0/inst_blk_mem_gen/gnbram.gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[0].ram.r/prim_init.ram/DEVICE_7SERIES.NO_BMM_INFO.TRUE_DP.SIMPLE_PRIM36.ram/DOADO[2] (HIGH)
-
- There are 3 register/latch pins with no clock driven by root clock pin: INST2/U0/inst_blk_mem_gen/gnbram.gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[0].ram.r/prim_init.ram/DEVICE_7SERIES.NO_BMM_INFO.TRUE_DP.SIMPLE_PRIM36.ram/DOADO[3] (HIGH)
-
- There are 3 register/latch pins with no clock driven by root clock pin: INST2/U0/inst_blk_mem_gen/gnbram.gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[0].ram.r/prim_init.ram/DEVICE_7SERIES.NO_BMM_INFO.TRUE_DP.SIMPLE_PRIM36.ram/DOADO[4] (HIGH)
-
- There are 3 register/latch pins with no clock driven by root clock pin: INST2/U0/inst_blk_mem_gen/gnbram.gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[0].ram.r/prim_init.ram/DEVICE_7SERIES.NO_BMM_INFO.TRUE_DP.SIMPLE_PRIM36.ram/DOADO[5] (HIGH)
-
- There are 3 register/latch pins with no clock driven by root clock pin: INST2/U0/inst_blk_mem_gen/gnbram.gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[0].ram.r/prim_init.ram/DEVICE_7SERIES.NO_BMM_INFO.TRUE_DP.SIMPLE_PRIM36.ram/DOADO[6] (HIGH)
-
- There are 3 register/latch pins with no clock driven by root clock pin: INST2/U0/inst_blk_mem_gen/gnbram.gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[1].ram.r/prim_init.ram/DEVICE_7SERIES.NO_BMM_INFO.TRUE_DP.SIMPLE_PRIM36.ram/DOADO[0] (HIGH)
-
- There are 3 register/latch pins with no clock driven by root clock pin: INST2/U0/inst_blk_mem_gen/gnbram.gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[1].ram.r/prim_init.ram/DEVICE_7SERIES.NO_BMM_INFO.TRUE_DP.SIMPLE_PRIM36.ram/DOADO[1] (HIGH)
-
- There are 3 register/latch pins with no clock driven by root clock pin: INST2/U0/inst_blk_mem_gen/gnbram.gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[1].ram.r/prim_init.ram/DEVICE_7SERIES.NO_BMM_INFO.TRUE_DP.SIMPLE_PRIM36.ram/DOADO[2] (HIGH)
-
- There are 3 register/latch pins with no clock driven by root clock pin: INST2/U0/inst_blk_mem_gen/gnbram.gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[1].ram.r/prim_init.ram/DEVICE_7SERIES.NO_BMM_INFO.TRUE_DP.SIMPLE_PRIM36.ram/DOADO[3] (HIGH)
-
- There are 3 register/latch pins with no clock driven by root clock pin: INST2/U0/inst_blk_mem_gen/gnbram.gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[1].ram.r/prim_init.ram/DEVICE_7SERIES.NO_BMM_INFO.TRUE_DP.SIMPLE_PRIM36.ram/DOADO[4] (HIGH)
-
- There are 3 register/latch pins with no clock driven by root clock pin: INST2/U0/inst_blk_mem_gen/gnbram.gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[1].ram.r/prim_init.ram/DEVICE_7SERIES.NO_BMM_INFO.TRUE_DP.SIMPLE_PRIM36.ram/DOADO[5] (HIGH)
-
- There are 3 register/latch pins with no clock driven by root clock pin: INST2/U0/inst_blk_mem_gen/gnbram.gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[1].ram.r/prim_init.ram/DEVICE_7SERIES.NO_BMM_INFO.TRUE_DP.SIMPLE_PRIM36.ram/DOADO[6] (HIGH)
-
- There are 3 register/latch pins with no clock driven by root clock pin: INST3/ID_PostFlush_reg_rep__0/Q (HIGH)
+1. checking no_clock (0)
+------------------------
+ There are 0 register/latch pins with no clock.
 
 
 2. checking constant_clock (0)
@@ -107,9 +77,9 @@ Table of Contents
  There are 0 register/latch pins which need pulse_width check
 
 
-4. checking unconstrained_internal_endpoints (3)
+4. checking unconstrained_internal_endpoints (0)
 ------------------------------------------------
- There are 3 pins that are not constrained for maximum delay. (HIGH)
+ There are 0 pins that are not constrained for maximum delay.
 
  There are 0 pins that are not constrained for maximum delay due to constant clock.
 
@@ -168,7 +138,7 @@ Table of Contents
 
     WNS(ns)      TNS(ns)  TNS Failing Endpoints  TNS Total Endpoints      WHS(ns)      THS(ns)  THS Failing Endpoints  THS Total Endpoints     WPWS(ns)     TPWS(ns)  TPWS Failing Endpoints  TPWS Total Endpoints  
     -------      -------  ---------------------  -------------------      -------      -------  ---------------------  -------------------     --------     --------  ----------------------  --------------------  
-      0.296        0.000                      0                 8582        0.031        0.000                      0                 8582        3.000        0.000                       0                  4447  
+      0.238        0.000                      0                 8641        0.039        0.000                      0                 8641        3.000        0.000                       0                  4474  
 
 
 All user specified timing constraints are met.
@@ -194,7 +164,7 @@ clk                   {0.000 5.000}      10.000          100.000
 Clock                     WNS(ns)      TNS(ns)  TNS Failing Endpoints  TNS Total Endpoints      WHS(ns)      THS(ns)  THS Failing Endpoints  THS Total Endpoints     WPWS(ns)     TPWS(ns)  TPWS Failing Endpoints  TPWS Total Endpoints  
 -----                     -------      -------  ---------------------  -------------------      -------      -------  ---------------------  -------------------     --------     --------  ----------------------  --------------------  
 clk                                                                                                                                                                     3.000        0.000                       0                     1  
-  clk_out1_clk_wiz_0        0.296        0.000                      0                 8582        0.031        0.000                      0                 8582        8.591        0.000                       0                  4444  
+  clk_out1_clk_wiz_0        0.238        0.000                      0                 8641        0.039        0.000                      0                 8641        8.591        0.000                       0                  4471  
   clkfbout_clk_wiz_0                                                                                                                                                   38.751        0.000                       0                     2  
 
 
@@ -251,26 +221,26 @@ High Pulse Width  Slow    MMCME2_ADV/CLKIN1  n/a            2.000         5.000 
 From Clock:  clk_out1_clk_wiz_0
   To Clock:  clk_out1_clk_wiz_0
 
-Setup :            0  Failing Endpoints,  Worst Slack        0.296ns,  Total Violation        0.000ns
-Hold  :            0  Failing Endpoints,  Worst Slack        0.031ns,  Total Violation        0.000ns
+Setup :            0  Failing Endpoints,  Worst Slack        0.238ns,  Total Violation        0.000ns
+Hold  :            0  Failing Endpoints,  Worst Slack        0.039ns,  Total Violation        0.000ns
 PW    :            0  Failing Endpoints,  Worst Slack        8.591ns,  Total Violation        0.000ns
 ---------------------------------------------------------------------------------------------------
 
 
 Max Delay Paths
 --------------------------------------------------------------------------------------
-Slack (MET) :             0.296ns  (required time - arrival time)
-  Source:                 INST2/U0/inst_blk_mem_gen/gnbram.gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[7].ram.r/prim_init.ram/DEVICE_7SERIES.NO_BMM_INFO.TRUE_DP.SIMPLE_PRIM36.ram/CLKBWRCLK
+Slack (MET) :             0.238ns  (required time - arrival time)
+  Source:                 INST2/U0/inst_blk_mem_gen/gnbram.gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[1].ram.r/prim_init.ram/DEVICE_7SERIES.NO_BMM_INFO.TRUE_DP.SIMPLE_PRIM36.ram/CLKBWRCLK
                             (rising edge-triggered cell RAMB36E1 clocked by clk_out1_clk_wiz_0  {rise@0.000ns fall@9.091ns period=18.182ns})
-  Destination:            INST3/BHT_reg[12][1]/D
+  Destination:            INST3/BHT_reg[18][1]/D
                             (rising edge-triggered cell FDRE clocked by clk_out1_clk_wiz_0  {rise@0.000ns fall@9.091ns period=18.182ns})
   Path Group:             clk_out1_clk_wiz_0
   Path Type:              Setup (Max at Slow Process Corner)
   Requirement:            18.182ns  (clk_out1_clk_wiz_0 rise@18.182ns - clk_out1_clk_wiz_0 rise@0.000ns)
-  Data Path Delay:        17.750ns  (logic 5.127ns (28.885%)  route 12.623ns (71.115%))
-  Logic Levels:           16  (LUT3=3 LUT5=3 LUT6=9 MUXF7=1)
-  Clock Path Skew:        -0.088ns (DCD - SCD + CPR)
-    Destination Clock Delay (DCD):    5.750ns = ( 23.932 - 18.182 ) 
+  Data Path Delay:        17.810ns  (logic 5.068ns (28.456%)  route 12.742ns (71.544%))
+  Logic Levels:           19  (LUT3=3 LUT4=2 LUT5=2 LUT6=11 MUXF7=1)
+  Clock Path Skew:        -0.086ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    5.752ns = ( 23.934 - 18.182 ) 
     Source Clock Delay      (SCD):    6.151ns
     Clock Pessimism Removal (CPR):    0.312ns
   Clock Uncertainty:      0.124ns  ((TSJ^2 + DJ^2)^1/2) / 2 + PE
@@ -291,45 +261,51 @@ Slack (MET) :             0.296ns  (required time - arrival time)
                          net (fo=2, routed)           1.661     4.441    INST1/inst/clk_out1_clk_wiz_0
     BUFGCTRL_X0Y0        BUFGCTRL (Prop_bufgctrl_I0_O)
                                                       0.096     4.537 r  INST1/inst/clkout1_buf/O
-                         net (fo=4434, routed)        1.614     6.151    INST2/U0/inst_blk_mem_gen/gnbram.gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[7].ram.r/prim_init.ram/clka
-    RAMB36_X1Y0          RAMB36E1                                     r  INST2/U0/inst_blk_mem_gen/gnbram.gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[7].ram.r/prim_init.ram/DEVICE_7SERIES.NO_BMM_INFO.TRUE_DP.SIMPLE_PRIM36.ram/CLKBWRCLK
+                         net (fo=4461, routed)        1.614     6.151    INST2/U0/inst_blk_mem_gen/gnbram.gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[1].ram.r/prim_init.ram/clka
+    RAMB36_X2Y1          RAMB36E1                                     r  INST2/U0/inst_blk_mem_gen/gnbram.gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[1].ram.r/prim_init.ram/DEVICE_7SERIES.NO_BMM_INFO.TRUE_DP.SIMPLE_PRIM36.ram/CLKBWRCLK
   -------------------------------------------------------------------    -------------------
-    RAMB36_X1Y0          RAMB36E1 (Prop_ramb36e1_CLKBWRCLK_DOBDO[7])
-                                                      2.454     8.605 r  INST2/U0/inst_blk_mem_gen/gnbram.gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[7].ram.r/prim_init.ram/DEVICE_7SERIES.NO_BMM_INFO.TRUE_DP.SIMPLE_PRIM36.ram/DOBDO[7]
-                         net (fo=1, routed)           1.254     9.859    INST2/U0/inst_blk_mem_gen/gnbram.gnativebmg.native_blk_mem_gen/valid.cstr/has_mux_b.B/DOBDO[7]
-    SLICE_X48Y13         LUT3 (Prop_lut3_I0_O)        0.124     9.983 r  INST2/U0/inst_blk_mem_gen/gnbram.gnativebmg.native_blk_mem_gen/valid.cstr/has_mux_b.B/doutb[31]_INST_0/O
-                         net (fo=9, routed)           0.776    10.759    INST3/INST3/doutb[31]
-    SLICE_X50Y15         LUT6 (Prop_lut6_I0_O)        0.124    10.883 r  INST3/INST3/reg_file[1][31]_i_8/O
-                         net (fo=26, routed)          0.759    11.643    INST3/INST3/INST9/p_0_in[7]
-    SLICE_X50Y22         LUT6 (Prop_lut6_I1_O)        0.124    11.767 r  INST3/INST3/reg_file[1][22]_i_3/O
-                         net (fo=1, routed)           0.601    12.367    INST3/INST3/reg_file[1][22]_i_3_n_0
-    SLICE_X50Y26         LUT6 (Prop_lut6_I4_O)        0.124    12.491 r  INST3/INST3/reg_file[1][22]_i_2/O
-                         net (fo=39, routed)          0.839    13.330    INST3/WB_rd_write_data[22]
-    SLICE_X45Y27         LUT6 (Prop_lut6_I0_O)        0.124    13.454 r  INST3/MEM_ALU_result[23]_i_13/O
-                         net (fo=19, routed)          1.461    14.915    INST3/EX_op1[22]
-    SLICE_X38Y23         LUT5 (Prop_lut5_I4_O)        0.150    15.065 r  INST3/MEM_ALU_result[29]_i_13/O
-                         net (fo=3, routed)           0.735    15.800    INST3/MEM_ALU_result[29]_i_13_n_0
-    SLICE_X39Y27         LUT6 (Prop_lut6_I3_O)        0.328    16.128 r  INST3/MEM_ALU_result[27]_i_9/O
-                         net (fo=2, routed)           0.852    16.980    INST3/MEM_ALU_result[27]_i_9_n_0
-    SLICE_X41Y32         LUT6 (Prop_lut6_I0_O)        0.124    17.104 r  INST3/MEM_ALU_result[27]_i_4/O
-                         net (fo=1, routed)           0.650    17.754    INST3/MEM_ALU_result[27]_i_4_n_0
-    SLICE_X42Y32         LUT6 (Prop_lut6_I0_O)        0.124    17.878 f  INST3/MEM_ALU_result[27]_i_2/O
-                         net (fo=1, routed)           0.000    17.878    INST3/MEM_ALU_result[27]_i_2_n_0
-    SLICE_X42Y32         MUXF7 (Prop_muxf7_I0_O)      0.209    18.087 f  INST3/MEM_ALU_result_reg[27]_i_1/O
-                         net (fo=3, routed)           0.847    18.934    INST3/EX_ALU_result[27]
-    SLICE_X41Y31         LUT6 (Prop_lut6_I3_O)        0.297    19.231 f  INST3/gh[0]_i_10/O
-                         net (fo=1, routed)           0.591    19.822    INST3/gh[0]_i_10_n_0
-    SLICE_X40Y26         LUT3 (Prop_lut3_I0_O)        0.124    19.946 r  INST3/gh[0]_i_6/O
-                         net (fo=5, routed)           0.681    20.627    INST3/gh[0]_i_6_n_0
-    SLICE_X40Y19         LUT5 (Prop_lut5_I1_O)        0.124    20.751 r  INST3/EX_BHTaddr[7]_i_6/O
-                         net (fo=3, routed)           0.324    21.075    INST3/EX_BHTaddr[7]_i_6_n_0
-    SLICE_X40Y17         LUT6 (Prop_lut6_I0_O)        0.124    21.199 r  INST3/EX_BHTaddr[7]_i_3/O
-                         net (fo=102, routed)         1.163    22.362    INST3/EX_prediction_status[1]
-    SLICE_X40Y9          LUT5 (Prop_lut5_I4_O)        0.117    22.479 r  INST3/BHT[63][1]_i_2/O
-                         net (fo=64, routed)          1.090    23.569    INST3/BHT[63][1]_i_2_n_0
-    SLICE_X38Y5          LUT3 (Prop_lut3_I0_O)        0.332    23.901 r  INST3/BHT[12][1]_i_1/O
-                         net (fo=1, routed)           0.000    23.901    INST3/BHT[12][1]_i_1_n_0
-    SLICE_X38Y5          FDRE                                         r  INST3/BHT_reg[12][1]/D
+    RAMB36_X2Y1          RAMB36E1 (Prop_ramb36e1_CLKBWRCLK_DOBDO[4])
+                                                      2.454     8.605 r  INST2/U0/inst_blk_mem_gen/gnbram.gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[1].ram.r/prim_init.ram/DEVICE_7SERIES.NO_BMM_INFO.TRUE_DP.SIMPLE_PRIM36.ram/DOBDO[4]
+                         net (fo=1, routed)           1.253     9.857    INST2/U0/inst_blk_mem_gen/gnbram.gnativebmg.native_blk_mem_gen/valid.cstr/has_mux_b.B/doutb[7][4]
+    SLICE_X47Y9          LUT3 (Prop_lut3_I0_O)        0.124     9.981 r  INST2/U0/inst_blk_mem_gen/gnbram.gnativebmg.native_blk_mem_gen/valid.cstr/has_mux_b.B/doutb[4]_INST_0/O
+                         net (fo=3, routed)           0.986    10.967    INST3/INST3/doutb[4]
+    SLICE_X47Y14         LUT6 (Prop_lut6_I5_O)        0.124    11.091 r  INST3/INST3/reg_file[1][4]_i_3/O
+                         net (fo=3, routed)           0.149    11.240    INST3/INST3/INST9/p_0_in[4]
+    SLICE_X47Y14         LUT6 (Prop_lut6_I2_O)        0.124    11.364 r  INST3/INST3/reg_file[2][4]_i_3/O
+                         net (fo=1, routed)           0.502    11.866    INST3/INST3/reg_file[2][4]_i_3_n_0
+    SLICE_X46Y15         LUT5 (Prop_lut5_I0_O)        0.124    11.990 r  INST3/INST3/reg_file[2][4]_i_2/O
+                         net (fo=36, routed)          0.619    12.608    INST3/WB_rd_write_data[4]
+    SLICE_X46Y16         LUT6 (Prop_lut6_I4_O)        0.124    12.732 r  INST3/MEM_ALU_result[4]_i_6/O
+                         net (fo=144, routed)         1.205    13.937    INST3/EX_op2[4]
+    SLICE_X43Y19         LUT3 (Prop_lut3_I1_O)        0.124    14.061 r  INST3/MEM_ALU_result[3]_i_29/O
+                         net (fo=2, routed)           0.733    14.794    INST3/MEM_ALU_result[3]_i_29_n_0
+    SLICE_X46Y17         LUT6 (Prop_lut6_I4_O)        0.124    14.918 r  INST3/MEM_ALU_result[3]_i_25/O
+                         net (fo=2, routed)           0.336    15.254    INST3/MEM_ALU_result[3]_i_25_n_0
+    SLICE_X42Y17         LUT4 (Prop_lut4_I0_O)        0.124    15.378 f  INST3/MEM_ALU_result[3]_i_10/O
+                         net (fo=2, routed)           0.577    15.956    INST3/MEM_ALU_result[3]_i_10_n_0
+    SLICE_X42Y14         LUT6 (Prop_lut6_I0_O)        0.124    16.080 r  INST3/MEM_ALU_result[2]_i_4/O
+                         net (fo=1, routed)           0.670    16.750    INST3/MEM_ALU_result[2]_i_4_n_0
+    SLICE_X42Y14         LUT6 (Prop_lut6_I0_O)        0.124    16.874 f  INST3/MEM_ALU_result[2]_i_2/O
+                         net (fo=1, routed)           0.000    16.874    INST3/MEM_ALU_result[2]_i_2_n_0
+    SLICE_X42Y14         MUXF7 (Prop_muxf7_I0_O)      0.209    17.083 f  INST3/MEM_ALU_result_reg[2]_i_1/O
+                         net (fo=7, routed)           1.031    18.113    INST3/EX_ALU_result[2]
+    SLICE_X45Y16         LUT4 (Prop_lut4_I0_O)        0.297    18.410 r  INST3/i_10_LOPT_REMAP_2/O
+                         net (fo=6, routed)           0.444    18.855    INST3/i_10/O_n_2
+    SLICE_X47Y15         LUT6 (Prop_lut6_I4_O)        0.124    18.979 r  INST3/i_5_LOPT_REMAP_12/O
+                         net (fo=4, routed)           0.679    19.658    INST3/i_5/O_n_12
+    SLICE_X52Y15         LUT6 (Prop_lut6_I0_O)        0.124    19.782 r  INST3/i_1_LOPT_REMAP_33/O
+                         net (fo=1, routed)           0.295    20.077    INST3/i_1/O_n_33
+    SLICE_X53Y14         LUT6 (Prop_lut6_I5_O)        0.124    20.201 r  INST3/i_0_LOPT_REMAP_33/O
+                         net (fo=2, routed)           0.669    20.869    INST3/gh[0]_i_8_n_0
+    SLICE_X52Y14         LUT6 (Prop_lut6_I1_O)        0.124    20.993 r  INST3/EX_BHTaddr[7]_i_7/O
+                         net (fo=1, routed)           0.295    21.288    INST3/EX_BHTaddr[7]_i_7_n_0
+    SLICE_X53Y12         LUT6 (Prop_lut6_I3_O)        0.124    21.412 r  INST3/EX_BHTaddr[7]_i_3/O
+                         net (fo=294, routed)         1.136    22.549    INST3/EX_prediction_status[1]
+    SLICE_X44Y9          LUT5 (Prop_lut5_I4_O)        0.124    22.673 r  INST3/BHT[63][1]_i_2/O
+                         net (fo=64, routed)          1.164    23.837    INST3/BHT[63][1]_i_2_n_0
+    SLICE_X42Y5          LUT3 (Prop_lut3_I0_O)        0.124    23.961 r  INST3/BHT[18][1]_i_1/O
+                         net (fo=1, routed)           0.000    23.961    INST3/BHT[18][1]_i_1_n_0
+    SLICE_X42Y5          FDRE                                         r  INST3/BHT_reg[18][1]/D
   -------------------------------------------------------------------    -------------------
 
                          (clock clk_out1_clk_wiz_0 rise edge)
@@ -343,16 +319,16 @@ Slack (MET) :             0.296ns  (required time - arrival time)
                          net (fo=2, routed)           1.581    22.396    INST1/inst/clk_out1_clk_wiz_0
     BUFGCTRL_X0Y0        BUFGCTRL (Prop_bufgctrl_I0_O)
                                                       0.091    22.487 r  INST1/inst/clkout1_buf/O
-                         net (fo=4434, routed)        1.445    23.932    INST3/clk_out1
-    SLICE_X38Y5          FDRE                                         r  INST3/BHT_reg[12][1]/C
-                         clock pessimism              0.312    24.244    
-                         clock uncertainty           -0.124    24.120    
-    SLICE_X38Y5          FDRE (Setup_fdre_C_D)        0.077    24.197    INST3/BHT_reg[12][1]
+                         net (fo=4461, routed)        1.447    23.934    INST3/clk_out1
+    SLICE_X42Y5          FDRE                                         r  INST3/BHT_reg[18][1]/C
+                         clock pessimism              0.312    24.246    
+                         clock uncertainty           -0.124    24.122    
+    SLICE_X42Y5          FDRE (Setup_fdre_C_D)        0.077    24.199    INST3/BHT_reg[18][1]
   -------------------------------------------------------------------
-                         required time                         24.197    
-                         arrival time                         -23.901    
+                         required time                         24.199    
+                         arrival time                         -23.961    
   -------------------------------------------------------------------
-                         slack                                  0.296    
+                         slack                                  0.238    
 
 
 
@@ -360,20 +336,20 @@ Slack (MET) :             0.296ns  (required time - arrival time)
 
 Min Delay Paths
 --------------------------------------------------------------------------------------
-Slack (MET) :             0.031ns  (arrival time - required time)
-  Source:                 INST5/dia_reg[26]/C
+Slack (MET) :             0.039ns  (arrival time - required time)
+  Source:                 INST5/write_frame_reg[30]/C
                             (rising edge-triggered cell FDRE clocked by clk_out1_clk_wiz_0  {rise@0.000ns fall@9.091ns period=18.182ns})
-  Destination:            INST2/U0/inst_blk_mem_gen/gnbram.gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[6].ram.r/prim_init.ram/DEVICE_7SERIES.NO_BMM_INFO.TRUE_DP.SIMPLE_PRIM36.ram/DIADI[2]
-                            (rising edge-triggered cell RAMB36E1 clocked by clk_out1_clk_wiz_0  {rise@0.000ns fall@9.091ns period=18.182ns})
+  Destination:            INST5/dia_reg[6]/D
+                            (rising edge-triggered cell FDRE clocked by clk_out1_clk_wiz_0  {rise@0.000ns fall@9.091ns period=18.182ns})
   Path Group:             clk_out1_clk_wiz_0
   Path Type:              Hold (Min at Fast Process Corner)
   Requirement:            0.000ns  (clk_out1_clk_wiz_0 rise@0.000ns - clk_out1_clk_wiz_0 rise@0.000ns)
-  Data Path Delay:        0.378ns  (logic 0.141ns (37.276%)  route 0.237ns (62.724%))
-  Logic Levels:           0  
-  Clock Path Skew:        0.051ns (DCD - SCD - CPR)
-    Destination Clock Delay (DCD):    2.375ns
-    Source Clock Delay      (SCD):    1.792ns
-    Clock Pessimism Removal (CPR):    0.531ns
+  Data Path Delay:        0.396ns  (logic 0.186ns (46.932%)  route 0.210ns (53.068%))
+  Logic Levels:           1  (LUT2=1)
+  Clock Path Skew:        0.265ns (DCD - SCD - CPR)
+    Destination Clock Delay (DCD):    2.336ns
+    Source Clock Delay      (SCD):    1.789ns
+    Clock Pessimism Removal (CPR):    0.282ns
 
     Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
   -------------------------------------------------------------------    -------------------
@@ -388,12 +364,14 @@ Slack (MET) :             0.031ns  (arrival time - required time)
                          net (fo=2, routed)           0.486     1.203    INST1/inst/clk_out1_clk_wiz_0
     BUFGCTRL_X0Y0        BUFGCTRL (Prop_bufgctrl_I0_O)
                                                       0.026     1.229 r  INST1/inst/clkout1_buf/O
-                         net (fo=4434, routed)        0.564     1.792    INST5/CLK
-    SLICE_X48Y11         FDRE                                         r  INST5/dia_reg[26]/C
+                         net (fo=4461, routed)        0.561     1.789    INST5/CLK
+    SLICE_X35Y7          FDRE                                         r  INST5/write_frame_reg[30]/C
   -------------------------------------------------------------------    -------------------
-    SLICE_X48Y11         FDRE (Prop_fdre_C_Q)         0.141     1.933 r  INST5/dia_reg[26]/Q
-                         net (fo=2, routed)           0.237     2.170    INST2/U0/inst_blk_mem_gen/gnbram.gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[6].ram.r/prim_init.ram/dina[2]
-    RAMB36_X1Y3          RAMB36E1                                     r  INST2/U0/inst_blk_mem_gen/gnbram.gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[6].ram.r/prim_init.ram/DEVICE_7SERIES.NO_BMM_INFO.TRUE_DP.SIMPLE_PRIM36.ram/DIADI[2]
+    SLICE_X35Y7          FDRE (Prop_fdre_C_Q)         0.141     1.930 r  INST5/write_frame_reg[30]/Q
+                         net (fo=2, routed)           0.210     2.140    INST5/in21[6]
+    SLICE_X36Y7          LUT2 (Prop_lut2_I1_O)        0.045     2.185 r  INST5/dia[6]_i_1/O
+                         net (fo=1, routed)           0.000     2.185    INST5/dia[6]
+    SLICE_X36Y7          FDRE                                         r  INST5/dia_reg[6]/D
   -------------------------------------------------------------------    -------------------
 
                          (clock clk_out1_clk_wiz_0 rise edge)
@@ -407,16 +385,15 @@ Slack (MET) :             0.031ns  (arrival time - required time)
                          net (fo=2, routed)           0.530     1.477    INST1/inst/clk_out1_clk_wiz_0
     BUFGCTRL_X0Y0        BUFGCTRL (Prop_bufgctrl_I0_O)
                                                       0.029     1.506 r  INST1/inst/clkout1_buf/O
-                         net (fo=4434, routed)        0.869     2.375    INST2/U0/inst_blk_mem_gen/gnbram.gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[6].ram.r/prim_init.ram/clka
-    RAMB36_X1Y3          RAMB36E1                                     r  INST2/U0/inst_blk_mem_gen/gnbram.gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[6].ram.r/prim_init.ram/DEVICE_7SERIES.NO_BMM_INFO.TRUE_DP.SIMPLE_PRIM36.ram/CLKARDCLK
-                         clock pessimism             -0.531     1.844    
-    RAMB36_X1Y3          RAMB36E1 (Hold_ramb36e1_CLKARDCLK_DIADI[2])
-                                                      0.296     2.140    INST2/U0/inst_blk_mem_gen/gnbram.gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[6].ram.r/prim_init.ram/DEVICE_7SERIES.NO_BMM_INFO.TRUE_DP.SIMPLE_PRIM36.ram
+                         net (fo=4461, routed)        0.831     2.336    INST5/CLK
+    SLICE_X36Y7          FDRE                                         r  INST5/dia_reg[6]/C
+                         clock pessimism             -0.282     2.054    
+    SLICE_X36Y7          FDRE (Hold_fdre_C_D)         0.092     2.146    INST5/dia_reg[6]
   -------------------------------------------------------------------
-                         required time                         -2.140    
-                         arrival time                           2.170    
+                         required time                         -2.146    
+                         arrival time                           2.185    
   -------------------------------------------------------------------
-                         slack                                  0.031    
+                         slack                                  0.039    
 
 
 
@@ -430,10 +407,10 @@ Period(ns):         18.182
 Sources:            { INST1/inst/mmcm_adv_inst/CLKOUT0 }
 
 Check Type        Corner  Lib Pin             Reference Pin  Required(ns)  Actual(ns)  Slack(ns)  Location         Pin
-Min Period        n/a     RAMB36E1/CLKARDCLK  n/a            2.576         18.182      15.606     RAMB36_X2Y0      INST2/U0/inst_blk_mem_gen/gnbram.gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[0].ram.r/prim_init.ram/DEVICE_7SERIES.NO_BMM_INFO.TRUE_DP.SIMPLE_PRIM36.ram/CLKARDCLK
+Min Period        n/a     RAMB36E1/CLKARDCLK  n/a            2.944         18.182      15.238     RAMB36_X1Y1      INST2/U0/inst_blk_mem_gen/gnbram.gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[0].ram.r/prim_init.ram/DEVICE_7SERIES.NO_BMM_INFO.TRUE_DP.SIMPLE_PRIM36.ram/CLKARDCLK
 Max Period        n/a     MMCME2_ADV/CLKOUT0  n/a            213.360       18.182      195.178    MMCME2_ADV_X1Y0  INST1/inst/mmcm_adv_inst/CLKOUT0
-Low Pulse Width   Slow    FDCE/C              n/a            0.500         9.091       8.591      SLICE_X35Y13     INST1/inst/seq_reg1_reg[0]/C
-High Pulse Width  Slow    FDCE/C              n/a            0.500         9.091       8.591      SLICE_X35Y13     INST1/inst/seq_reg1_reg[0]/C
+Low Pulse Width   Slow    FDCE/C              n/a            0.500         9.091       8.591      SLICE_X35Y10     INST1/inst/seq_reg1_reg[0]/C
+High Pulse Width  Slow    FDCE/C              n/a            0.500         9.091       8.591      SLICE_X35Y10     INST1/inst/seq_reg1_reg[0]/C
 
 
 

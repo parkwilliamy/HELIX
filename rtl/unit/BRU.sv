@@ -30,7 +30,7 @@ module BRU (
                     3'b101: branch_taken_inter = ~(sign^overflow); // BGE
                     3'b110: branch_taken_inter = carry; // BLTU
                     3'b111: branch_taken_inter = ~carry; // BGEU
-                    default: branch_taken_inter = 'x;
+                    default: branch_taken_inter = 0;
                     
                 endcase
 
@@ -66,7 +66,7 @@ module BRU (
 
             end
 
-            else prediction_status = 'x;
+            else prediction_status = 0;
            
         end
       

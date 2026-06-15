@@ -1,7 +1,7 @@
 Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
 ---------------------------------------------------------------------------------------------------------------------------------------------
 | Tool Version : Vivado v.2025.2 (win64) Build 6299465 Fri Nov 14 19:35:11 GMT 2025
-| Date         : Mon Jun 15 13:44:28 2026
+| Date         : Mon Jun 15 16:57:40 2026
 | Host         : NB-WYPARK running 64-bit major release  (build 9200)
 | Command      : report_drc -file ./synth/reports/post_imp_drc.rpt
 | Design       : top
@@ -24,18 +24,12 @@ Table of Contents
       Design limits: <entire design considered>
            Ruledeck: default
              Max checks: <unlimited>
-             Checks found: 1
-+----------+----------+-------------------+--------+
-| Rule     | Severity | Description       | Checks |
-+----------+----------+-------------------+--------+
-| PDRC-153 | Warning  | Gated clock check | 1      |
-+----------+----------+-------------------+--------+
+             Checks found: 0
++------+----------+-------------+--------+
+| Rule | Severity | Description | Checks |
++------+----------+-------------+--------+
++------+----------+-------------+--------+
 
 2. REPORT DETAILS
 -----------------
-PDRC-153#1 Warning
-Gated clock check  
-Net INST3/INST2/ValidReg_reg[2]_i_2_n_0 is a gated clock net sourced by a combinational pin INST3/INST2/ValidReg_reg[2]_i_2/O, cell INST3/INST2/ValidReg_reg[2]_i_2. This is not good design practice and will likely impact performance. For SLICE registers, for example, use the CE pin to control the loading of data.
-Related violations: <none>
-
 

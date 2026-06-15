@@ -59,6 +59,7 @@ set_property PROGRAM.CHECKSUM      0            $cfgmem
 # --- Step 5: Program flash ---
 create_hw_bitstream -hw_device [current_hw_device] [get_property PROGRAM.HW_CFGMEM_BITFILE [current_hw_device]]
 program_hw_devices [current_hw_device]
+program_hw_cfgmem -hw_cfgmem $cfgmem
 refresh_hw_device [current_hw_device]
 
 # --- Step 6: Boot from flash now ---

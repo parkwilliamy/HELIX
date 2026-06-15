@@ -35,7 +35,7 @@ module ForwardUnit (
             0: MEM_rd_write_data = MEM_ALU_result;
             2: MEM_rd_write_data = MEM_pc_imm;
             3: MEM_rd_write_data = MEM_pc_4;
-            default: MEM_rd_write_data = 'x;
+            default: MEM_rd_write_data = 0;
 
         endcase
 

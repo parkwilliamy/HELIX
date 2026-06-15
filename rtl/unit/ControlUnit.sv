@@ -19,7 +19,7 @@ module ControlUnit (
     // Valid: 0 -> Instruction is not in RV32I, 1 -> instruction is in RV32I
 );
 
-    always_latch begin
+    always_comb begin
 
         ALUOp = 0;
         RegSrc = 0;
@@ -30,6 +30,7 @@ module ControlUnit (
         Branch = 0;
         Jump = 0;
         Valid = 1;
+        ValidReg = 0;
 
         case (opcode)
 
@@ -115,15 +116,16 @@ module ControlUnit (
 
             default: begin
 
-                ALUOp = 'x;
-                RegSrc = 'x;
-                ALUSrc = 'x;
-                RegWrite = 'x;
-                MemRead = 'x;
-                MemWrite = 'x;
-                Branch = 'x;
-                Jump = 'x;
-                Valid = 'x;
+                ALUOp = 0;
+                RegSrc = 0;
+                ALUSrc = 0;
+                RegWrite = 0;
+                MemRead = 0;
+                MemWrite = 0;
+                Branch = 0;
+                Jump = 0;
+                Valid = 0;
+                ValidReg = 0;
 
             end
             

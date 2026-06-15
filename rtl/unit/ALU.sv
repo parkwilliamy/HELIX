@@ -31,7 +31,7 @@ module ALU (
             SRA: ALU_result = $signed(op1)>>>op2[4:0];
             SLT: ALU_result = {{(XLEN-1){1'b0}}, $signed(op1)<$signed(op2)};
             SLTU: ALU_result = {{(XLEN-1){1'b0}}, op1<op2};
-            default: ALU_result = 'x;
+            default: ALU_result = 0;
 
         endcase
         

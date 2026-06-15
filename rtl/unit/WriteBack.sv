@@ -29,7 +29,7 @@ module WriteBack (
             3'b010: DMEM_result = DMEM_shifted_word; // LW
             3'b100: DMEM_result = {24'b0, DMEM_shifted_word[7:0]}; // LBU
             3'b101: DMEM_result = {16'b0, DMEM_shifted_word[15:0]}; // LHU
-            default: DMEM_result = 'x;
+            default: DMEM_result = 0;
 
         endcase
 
@@ -39,7 +39,7 @@ module WriteBack (
             1: rd_write_data = DMEM_result;
             2: rd_write_data = pc_imm;
             3: rd_write_data = pc_4;
-            default: rd_write_data = 'x;
+            default: rd_write_data = 0;
 
         endcase
 

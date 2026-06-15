@@ -48,8 +48,8 @@ module ImmGen (
                 intimm2 = {instruction[XLEN-1], instruction[19:12], instruction[20], instruction[30:21]};
             end
             default: begin
-                intimm1 = 'x;
-                intimm2 = 'x;
+                intimm1 = 0;
+                intimm2 = 0;
             end
 
         endcase

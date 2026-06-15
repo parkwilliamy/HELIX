@@ -38,37 +38,37 @@ module Store (
 
         if (MemWrite) begin
 
-                case (funct3) 
+            case (funct3) 
 
-                    3'b000: begin // SB
-                        
-                        web = (4'b0001 << byte_offset);
-                        dib[7+8*byte_offset -: 8] = final_data[7:0]; 
-
-                    end
-
-                    3'b001: begin // SH
-
-                        web = (4'b0011 << byte_offset);
-                        dib[15+8*byte_offset -: 16] = final_data[15:0]; 
+                3'b000: begin // SB
                     
-                    end
+                    web = (4'b0001 << byte_offset);
+                    dib[7+8*byte_offset -: 8] = final_data[7:0]; 
 
-                    3'b010: begin // SW
+                end
 
-                        web = 4'b1111;
-                        dib = final_data;
+                3'b001: begin // SH
 
-                    end
-
-                    default: begin
-
-                        web = 'x;
-                        dib = 'x;
-
-                    end
+                    web = (4'b0011 << byte_offset);
+                    dib[15+8*byte_offset -: 16] = final_data[15:0]; 
                 
-                endcase
+                end
+
+                3'b010: begin // SW
+
+                    web = 4'b1111;
+                    dib = final_data;
+
+                end
+
+                default: begin
+
+                    web = 0;
+                    dib = 0;
+
+                end
+            
+            endcase
              
         end
 
