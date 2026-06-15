@@ -24,10 +24,6 @@ xsim*
 xsim.dir/
 sim/obj_dir/
 
-# Generated bitstreams
-*.bit
-*.mcs
-
 # OS files
 .DS_Store
 Thumbs.db
