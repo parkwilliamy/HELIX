@@ -133,7 +133,7 @@ module Core (
     logic [ghsize-1:0] gh; // Global History shift register stores the last 8 predictions, with 0 indicating branch not taken and 1 indicating branch taken
     
     assign ID_pc_wire = ID_pc;
-    assign IF_BHTaddr = IF_pc[ghsize +: 2] ^ gh; // gshare branch prediction indexing
+    assign IF_BHTaddr = IF_pc[2 +: ghsize] ^ gh; // gshare branch prediction indexing
     assign IF_branch_prediction = BHT[IF_BHTaddr];
 
     // Branch Target Buffer (BTB) is a 2-way set associative cache that holds up to 32 branch target addresses
