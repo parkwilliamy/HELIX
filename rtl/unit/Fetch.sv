@@ -82,14 +82,6 @@ module Fetch (
 
                 end
 
-                default: begin
-
-                    next_pc = IF_pc_4;
-                    ID_Flush = 0;
-                    EX_Flush = 0;
-
-                end
-
             endcase
 
         end
