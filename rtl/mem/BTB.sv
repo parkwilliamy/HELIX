@@ -1,7 +1,7 @@
 `timescale 1ns/1ps
 
 module BTB
-    import BTB_constants::*;
+    import branch_constants::*;
     import top_constants::*;
 (
     input logic clk, rst_n, write, ID_Branch,

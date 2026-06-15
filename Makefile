@@ -30,7 +30,9 @@ compliance:
 	verilator $(COMPLIANCE_FLAGS) -I./packages -I./rtl/mem/ $(PKGS) $(RTL) ./rtl/sim/*.sv ../tb/system/top_tb.sv compliance/top_tb.cpp -o top_tb_sim
 synth:
 	vivado -mode batch -source ./scripts/synth.tcl -nolog -nojournal -notrace -tclargs ./synth
+	rm dfx_runtime.txt
 fpga:
 	vivado -mode batch -source ./scripts/place.tcl -nolog -nojournal -notrace -tclargs ./synth
 	vivado -mode batch -source ./scripts/route.tcl -nolog -nojournal -notrace -tclargs ./synth
 	vivado -mode batch -source ./scripts/bitgen.tcl -nolog -nojournal -notrace -tclargs ./synth
+	rm dfx_runtime.txt

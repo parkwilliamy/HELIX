@@ -2,7 +2,7 @@
 
 module BTB_tb;
 
-    import BTB_constants::*;
+    import branch_constants::*;
     import mem_constants::*;
 
     class BTBInputs;

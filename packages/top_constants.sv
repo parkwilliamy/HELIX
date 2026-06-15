@@ -17,20 +17,6 @@ package top_constants;
         SLTU = 4'b0011
     } alu_op;
 
-    typedef enum logic [1:0] { // Encodings for branch prediction
-        strong_not_taken = 2'b00, // Strong not taken
-        weak_not_taken = 2'b01, // Weak not taken
-        weak_taken = 2'b10, // Weak taken
-        strong_taken = 2'b11 // Strong taken
-    } prediction_encoding;
-
-    typedef enum logic [1:0] { // Encodings for branch prediction status
-        NT_T = 2'b00, // Predicted not taken, branch taken
-        T_NT = 2'b01, // Predicted taken, branch not taken
-        NT_NT = 2'b10, // Predicted not taken, branch not taken
-        T_T = 2'b11 // Predicted taken, branch taken
-    } prediction_status_encoding;
-
     typedef enum logic [6:0] { // Opcodes for different instruction types
         OP_R = 7'b0110011,
         OP_I = 7'b0010011,

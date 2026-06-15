@@ -1,6 +1,7 @@
 `timescale 1ns/1ps
 
 import top_constants::*;
+import branch_constants::*;
 import mem_constants::*;
 
 module Core (
@@ -122,17 +123,17 @@ module Core (
                
     // =============================== INSTRUCTION FETCH ================================
 
-    logic [1:0] BHT [255:0]; // Branch History Table stores predictions for up to 256 branch instructions
+    logic [1:0] BHT [BHTsize-1:0]; // Branch History Table stores predictions for up to 256 branch instructions
     // Prediction Encodings
     // 1) 00 - Strong Not Taken
     // 2) 01 - Weak Not Taken
     // 3) 10 - Weak Taken
     // 4) 11 - Strong Taken
 
-    logic [7:0] gh; // Global History shift register stores the last 8 predictions, with 0 indicating branch not taken and 1 indicating branch taken
+    logic [ghsize-1:0] gh; // Global History shift register stores the last 8 predictions, with 0 indicating branch not taken and 1 indicating branch taken
     
     assign ID_pc_wire = ID_pc;
-    assign IF_BHTaddr = IF_pc[9:2] ^ gh; // gshare branch prediction indexing
+    assign IF_BHTaddr = IF_pc[ghsize +: 2] ^ gh; // gshare branch prediction indexing
     assign IF_branch_prediction = BHT[IF_BHTaddr];
 
     // Branch Target Buffer (BTB) is a 2-way set associative cache that holds up to 32 branch target addresses

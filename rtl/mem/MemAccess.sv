@@ -1,19 +1,18 @@
 `timescale 1ns/1ps
 
 import top_constants::*;
+import mem_constants::*;
 
 module MemAccess (
     input logic clk, rst_n, byte_done,
     input logic [7:0] RX_data, // Received data from sender
     input logic [XLEN-1:0] dob,
     output logic TX_enable, // Indicates when data can be transmitted over TX
-    output logic [15:0] addra, addrb,
+    output logic [ADDR_WIDTH-1:0] addra, addrb,
     output logic [3:0] wea,
     output logic [XLEN-1:0] dia,
     output logic [7:0] TX_data // Data to transmit over TX
 );
-
-    localparam ADDR_WIDTH = 16;
 
     typedef enum logic[2:0] {
         IDLE = 3'b000, 
@@ -34,7 +33,7 @@ module MemAccess (
 
     logic [2:0] msgidx; // Byte index used during data reception on RX
     logic [1:0] word_idx; // Word index used during BRAM data transmission on TX
-    logic [15:0] ADDR_HIGH; // Stores last address to read data from in a read message
+    logic [ADDR_WIDTH-1:0] ADDR_HIGH; // Stores last address to read data from in a read message
 
     always_ff @ (posedge clk) begin
 

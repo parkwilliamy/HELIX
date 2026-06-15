@@ -1,6 +1,6 @@
 `timescale 1ns/1ps
 
-package BTB_constants;
+package branch_constants;
 
     import top_constants::*;
 
@@ -20,6 +20,23 @@ package BTB_constants;
         logic [LRU_WIDTH-1:0] lru; // LRU counter, where 0 indicates the most recently used line
     } BTB_line;
 
+    typedef enum logic [1:0] { // Encodings for branch prediction
+        strong_not_taken = 2'b00, // Strong not taken
+        weak_not_taken = 2'b01, // Weak not taken
+        weak_taken = 2'b10, // Weak taken
+        strong_taken = 2'b11 // Strong taken
+    } prediction_encoding;
+
+    typedef enum logic [1:0] { // Encodings for branch prediction status
+        NT_T = 2'b00, // Predicted not taken, branch taken
+        T_NT = 2'b01, // Predicted taken, branch not taken
+        NT_NT = 2'b10, // Predicted not taken, branch not taken
+        T_T = 2'b11 // Predicted taken, branch taken
+    } prediction_status_encoding;
+
+    localparam int BHTsize = 256, // Branch History Table Entries
+                   ghsize = 8; // Global History Shift Register Size
+
     // ==================================== TESTBENCH SPECIFIC DEFINITIONS ====================================
 
     typedef enum logic [1:0] {
@@ -27,5 +44,7 @@ package BTB_constants;
         HALF_VALID = 2'b01,
         ALL_VALID = 2'b10
     } BTB_states;
+
+    
 
 endpackage
