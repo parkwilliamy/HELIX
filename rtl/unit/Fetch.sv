@@ -81,6 +81,10 @@ module Fetch (
                     ID_Flush = 1;
 
                 end
+                
+                // For Verilator warnings
+                default: begin
+                end
 
             endcase
 
