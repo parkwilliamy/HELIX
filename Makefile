@@ -7,11 +7,12 @@ PKGS := $(FIRST_PKG) $(filter-out $(FIRST_PKG),$(shell find packages -name '*.sv
 RTL := rtl/mem/*.sv rtl/system/*.sv rtl/unit/*.sv
 TB := $(shell find tb -name '*.sv')
 TOP ?= top
+PLUS_ARGS ?= 
 
 ifeq ($(WAVE), 1)
-SIM_ARGS ?= -nolog -gui -view $(ROOT)wave/$(TOP)_tb_sim.wcfg
+SIM_ARGS ?= -nolog -gui -view $(ROOT)wave/$(TOP)_tb_sim.wcfg $(PLUS_ARGS)
 else
-SIM_ARGS ?= -runall -log $(TOP)_sim.log
+SIM_ARGS ?= -runall -log $(TOP)_sim.log $(PLUS_ARGS)
 endif
 
 .PHONY: lint sim compliance synth fpga bit
