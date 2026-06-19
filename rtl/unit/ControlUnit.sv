@@ -4,19 +4,20 @@ import top_constants::*;
 
 module ControlUnit (
     input logic [6:0] opcode,
-    output logic [2:0] ValidReg,
-    output logic [1:0] ALUOp, RegSrc,
-    output logic ALUSrc, RegWrite, MemRead, MemWrite, Branch, Jump, Valid
+    output logic [2:0] ValidReg, RegSrc
+    output logic [1:0] ALUOp, ALUSrc,
+    output logic RegWrite, MemRead, MemWrite, Branch, Jump, Valid, CSR
     // ValidReg: {rs2, rs1, rd} are valid registers (validity is determined by instruction type, for example, only rs1 and rs2 valid in B-type instructions)
+    // RegSrc: 0 -> ALU result, 1 -> data memory, 2 -> pc-imm adder, 3 -> next instruction address (pc+4), 4 -> CSR value
     // ALUOp: 0 -> Decode regbit, funct3 and funct7 in ALUControl, 1 -> ADD, 2 -> SUB
-    // RegSrc: 0 -> ALU result, 1 -> data memory, 2 -> pc-imm adder, 3 -> next instruction address (pc+4)
-    // ALUSrc: 0 -> Second operand is rs2, 1 -> second operand is sign extended immediate
+    // ALUSrc: 0 -> Second operand is rs2, 1 -> second operand is sign extended immediate, 2 -> second operand is CSR value
     // RegWrite: 0 -> No writeback to RegFile, 1 -> writeback to RegFile
     // MemRead: 0 -> No read from data memory, 1 -> read from data memory into RegFile
     // MemWrite: 0 -> No write to data memory, 1 -> write to data memory 
     // Branch: 0 -> Instruction is not B-type, 1 -> instruction is B-type
     // Jump: 0 -> Instruction is not J-type, 1 -> instruction is J-type
-    // Valid: 0 -> Instruction is not in RV32I, 1 -> instruction is in RV32I
+    // Valid: 0 -> Instruction is not in RV32IZicsr, 1 -> instruction is in RV32IZicsr
+    // CSR: 0 -> Instruction is not in Zicsr extension, 1 -> instruction is in Zicsr extension
 );
 
     always_comb begin
@@ -31,6 +32,7 @@ module ControlUnit (
         Jump = 0;
         Valid = 1;
         ValidReg = 0;
+        CSR = 0;
 
         case (opcode)
 
@@ -114,6 +116,16 @@ module ControlUnit (
 
             end 
 
+            OP_SYSTEM: begin
+
+                RegSrc = 4;
+                ALUOp = 1;
+                ALUSrc = 2;
+                ValidReg = 3'b011;
+                CSR = 1;
+
+            end
+
             default: begin
 
                 ALUOp = 0;
@@ -126,6 +138,7 @@ module ControlUnit (
                 Jump = 0;
                 Valid = 0;
                 ValidReg = 0;
+                CSR = 0;
 
             end
             

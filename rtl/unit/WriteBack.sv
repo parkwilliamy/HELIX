@@ -4,8 +4,7 @@ import top_constants::*;
 
 module WriteBack (
     input logic [XLEN-1:0] ALU_result, pc_imm, pc_4,
-    input logic [2:0] funct3,
-    input logic [1:0] RegSrc,
+    input logic [2:0] funct3, RegSrc
     input logic [XLEN-1:0] DMEM_word,
     output logic [XLEN-1:0] rd_write_data
 );

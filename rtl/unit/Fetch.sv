@@ -4,8 +4,8 @@ import top_constants::*;
 import branch_constants::*;
 
 module Fetch (
-    input logic [1:0] IF_branch_prediction, ID_branch_prediction, prediction_status, 
-    input logic IF_BTBhit, ID_BTBhit, IF_Branch, IF_Jump, ID_Branch, EX_Branch, ID_Jump, EX_Jump, ID_ALUSrc, EX_ALUSrc,
+    input logic [1:0] IF_branch_prediction, ID_branch_prediction, prediction_status, ID_ALUSrc, EX_ALUSrc,
+    input logic IF_BTBhit, ID_BTBhit, IF_Branch, IF_Jump, ID_Branch, EX_Branch, ID_Jump, EX_Jump, 
     input logic [XLEN-1:0] IF_pc, IF_pc_imm, EX_pc_4, ID_pc_imm, EX_pc_imm, rs1_imm,
     output logic [XLEN-1:0] IF_pc_4,
     output logic [XLEN-1:0] next_pc,

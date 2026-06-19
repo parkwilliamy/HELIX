@@ -16,8 +16,6 @@ module Core (
 
     // Pipeline Stages: IF (Instruction Fetch), ID (Instruction Decode), EX (Execute), MEM (Memory Writeback), WB (Register File Writeback)
     // Generally most registers are written as {PIPELINE STAGE}_{SIGNAL}
-    // Nets are written as {PIPELINE_STAGE}_{SIGNAL}_wire, these are used to connect to the pipeline registers
-
 
     // ************************************************************************************************ PIPELINE REGISTERS ************************************************************************************************************************************
 
@@ -36,30 +34,32 @@ module Core (
     // EX
     
     logic [3:0] EX_field;
-    logic [2:0] EX_ValidReg, EX_funct3;
-    logic [1:0] EX_ALUOp, EX_RegSrc, EX_branch_prediction;
-    logic EX_ALUSrc, EX_RegWrite, EX_MemRead, EX_MemWrite, EX_Branch, EX_Jump;
-    logic [XLEN-1:0] EX_pc_4, EX_rs1_data, EX_rs2_data, EX_imm, EX_pc_imm;
+    logic [2:0] EX_ValidReg, EX_funct3, EX_RegSrc;
+    logic [1:0] EX_ALUOp, EX_branch_prediction, EX_ALUSrc;
+    logic EX_RegWrite, EX_MemRead, EX_MemWrite, EX_Branch, EX_Jump, EX_csr_write;
+    logic [XLEN-1:0] EX_pc_4, EX_rs1_data, EX_rs2_data, EX_imm, EX_pc_imm, EX_csr_value, EX_csr_write_data;
     logic [4:0] EX_rs1, EX_rs2, EX_rd;
     logic [7:0] EX_BHTaddr;
+    logic [11:0] EX_csr_addr;
 
     // MEM
 
     logic [XLEN-1:0] MEM_pc_4;
-    logic [2:0] MEM_funct3, MEM_ValidReg;
-    logic [1:0] MEM_RegSrc; 
-    logic MEM_MemRead, MEM_MemWrite, MEM_RegWrite;
-    logic [XLEN-1:0] MEM_pc_imm, MEM_ALU_result, MEM_rs2_data;
+    logic [2:0] MEM_funct3, MEM_ValidReg, MEM_RegSrc;
+    logic MEM_MemRead, MEM_MemWrite, MEM_RegWrite, MEM_csr_write;
+    logic [XLEN-1:0] MEM_pc_imm, MEM_ALU_result, MEM_rs2_data, MEM_csr_value, MEM_csr_write_data;
     logic [4:0] MEM_rs2, MEM_rd;
+    logic [11:0] MEM_csr_addr;
 
     // WB
 
-    logic [XLEN-1:0] WB_pc_imm, WB_pc_4, WB_ALU_result;
-    logic [2:0] WB_funct3, WB_ValidReg;
-    logic [1:0] WB_RegSrc; 
+    logic [XLEN-1:0] WB_pc_imm, WB_pc_4, WB_ALU_result, WB_csr_value, WB_csr_write_data;
+    logic [2:0] WB_funct3, WB_ValidReg, WB_RegSrc;
     logic WB_MemRead;
     logic WB_RegWrite;
+    logic WB_csr_write;
     logic [4:0] WB_rd;
+    logic [11:0] WB_csr_addr;
 
 
     // ****************************************************************************************************** PIPELINE NETS ***********************************************************************************************************************************
@@ -73,43 +73,33 @@ module Core (
 
     // ID
 
-    logic [XLEN-1:0] ID_instruction, ID_imm, ID_rs1_data, ID_rs2_data, ID_pc_imm, ID_pc_wire;
+    logic [XLEN-1:0] ID_instruction, ID_imm, ID_rs1_data, ID_rs2_data, ID_pc_imm, ID_csr_value, ID_csr_write_data;
     logic [6:0] ID_opcode;
     logic [11:7] ID_rd;
     logic [14:12] ID_funct3;
     logic [19:15] ID_rs1;
     logic [24:20] ID_rs2;
     logic [XLEN-1:25] ID_funct7;
-    logic ID_Stall, ID_Flush, ID_ALUSrc, ID_RegWrite, ID_MemRead, ID_MemWrite, ID_Valid, ID_BTBhit_wire, ID_Branch, ID_Jump;
-    logic [2:0] ID_ValidReg;
-    logic [1:0] ID_ALUOp, ID_RegSrc, ID_branch_prediction_wire;
+    logic [11:0] ID_csr_addr;
+    logic ID_Stall, ID_Flush, ID_RegWrite, ID_MemRead, ID_MemWrite, ID_Valid, ID_Branch, ID_Jump, ID_CSR, ID_csr_write;
+    logic [2:0] ID_ValidReg, ID_RegSrc;
+    logic [1:0] ID_ALUOp, ID_ALUSrc;
     logic [3:0] ID_field; 
     
     // EX
     
-    logic EX_zero, EX_sign, EX_overflow, EX_carry, EX_Flush, EX_branch_taken, EX_Branch_wire, EX_rs1_fwd, EX_rs2_fwd, EX_Jump_wire, EX_ALUSrc_wire, EX_MemRead_wire;
-    logic [XLEN-1:0] EX_op1, EX_op2, EX_rs1_fwd_data, EX_rs2_fwd_data, EX_rs1_data_final, EX_rs2_data_final, EX_ALU_result, EX_pc_4_wire, EX_pc_imm_wire, EX_ALU_result_wire;
-    logic [3:0] EX_field_wire;
-    logic [2:0] EX_funct3_wire, EX_ValidReg_wire;
-    logic [1:0] EX_prediction_status, EX_branch_prediction_wire;
-    logic [4:0] EX_rs1_wire, EX_rs2_wire, EX_rd_wire;
+    logic EX_zero, EX_sign, EX_overflow, EX_carry, EX_Flush, EX_branch_taken, EX_rs1_fwd, EX_rs2_fwd;
+    logic [XLEN-1:0] EX_op1, EX_op2, EX_rs1_fwd_data, EX_rs2_fwd_data, EX_rs1_data_final, EX_rs2_data_final, EX_ALU_result;
+    logic [1:0] EX_prediction_status;
 
     // MEM
 
-    logic [XLEN-1:0] MEM_rs2_fwd_data, MEM_rs2_data_final, MEM_ALU_result_wire, MEM_pc_4_wire, MEM_pc_imm_wire;
-    logic [2:0] MEM_funct3_wire, MEM_ValidReg_wire;
-    logic MEM_rs2_fwd, MEM_MemWrite_wire, MEM_MemRead_wire;
-    logic [1:0] MEM_RegSrc_wire;
-    logic [4:0] MEM_rs2_wire, MEM_rd_wire;
+    logic [XLEN-1:0] MEM_rs2_fwd_data, MEM_rs2_data_final;
+    logic MEM_rs2_fwd;
 
     // WB
 
-    logic WB_RegWrite_wire;
-    logic [4:0] WB_rd_wire;
     logic [XLEN-1:0] WB_rd_write_data;
-    logic [2:0] WB_ValidReg_wire;
-    logic WB_MemRead_wire;
-
 
     // ********************************************************************************************************  PERFORMANCE METRICS **************************************************************************************************************************
 
@@ -132,7 +122,6 @@ module Core (
 
     logic [ghsize-1:0] gh; // Global History shift register stores the last 8 predictions, with 0 indicating branch not taken and 1 indicating branch taken
     
-    assign ID_pc_wire = ID_pc;
     assign IF_BHTaddr = IF_pc[2 +: ghsize] ^ gh; // gshare branch prediction indexing
     assign IF_branch_prediction = BHT[IF_BHTaddr];
 
@@ -146,7 +135,7 @@ module Core (
         .write(BTBwrite), 
         .ID_Branch(ID_Branch), 
         .IF_pc(IF_pc[XLEN-1:2]),
-        .ID_pc(ID_pc_wire[XLEN-1:2]),
+        .ID_pc(ID_pc[XLEN-1:2]),
         .pc_imm_in(ID_pc_imm),
         .pc_imm_out(IF_pc_imm),
         .IF_BTBhit(IF_BTBhit),
@@ -166,6 +155,7 @@ module Core (
     assign ID_rs1 = ID_instruction[19:15];
     assign ID_rs2 = ID_instruction[24:20];
     assign ID_funct7 = ID_instruction[XLEN-1:25];
+    assign ID_csr_addr = ID_instruction[XLEN-1 -: 12];
     assign addra = ID_Stall ? ID_pc[ADDR_WIDTH-1:0] : IF_pc[ADDR_WIDTH-1:0]; // fetch instruction from ID_pc if pipeline is stalled
     
     ControlUnit INST2 (
@@ -179,19 +169,17 @@ module Core (
         .MemWrite(ID_MemWrite), 
         .Branch(ID_Branch),
         .Jump(ID_Jump),
-        .Valid(ID_Valid)
+        .Valid(ID_Valid),
+        .CSR(ID_CSR)
     );
-    
-    assign WB_RegWrite_wire = WB_RegWrite;
-    assign WB_rd_wire = WB_rd;
 
     RegFile INST3 (
         .clk(clk), 
         .rst_n(rst_n),
-        .RegWrite(WB_RegWrite_wire), 
+        .RegWrite(WB_RegWrite), 
         .rs1(ID_rs1), 
         .rs2(ID_rs2), 
-        .rd(WB_rd_wire), 
+        .rd(WB_rd), 
         .rd_write_data(WB_rd_write_data), 
         .rs1_data(ID_rs1_data), 
         .rs2_data(ID_rs2_data)
@@ -213,18 +201,34 @@ module Core (
     assign ID_pc_imm = ID_pc + ID_imm;
     assign BTBwrite = (ID_Jump || ID_Branch) ? 1 : 0;
     
+    CSRControl INST6 (
+        .clk(clk),
+        .rst_n(rst_n),
+        .CSR(ID_CSR),
+        .WB_csr_write(WB_csr_write),
+        .funct3(ID_funct3),
+        .ID_csr_addr(ID_csr_addr),
+        .WB_csr_addr(WB_csr_addr),
+        .rs1(ID_rs1),
+        .rd(ID_rd),
+        .ID_rs1_data(ID_rs1_data),
+        .WB_csr_write_data(WB_csr_write_data),
+        .ID_csr_write(ID_csr_write),
+        .csr_value(ID_csr_value),
+        .ID_csr_write_data(ID_csr_write_data)
+    );
+    
 
     // ==================================== EXECUTE =====================================
 
-    assign EX_op1 = (EX_ALUOp == 1 && EX_ALUSrc == 1 && EX_RegSrc == 0 && EX_RegWrite == 1 && EX_ValidReg == 3'b001) ? 0 : EX_rs1_data_final;
-    assign EX_op2 = EX_ALUSrc ? EX_imm : EX_rs2_data_final;
-    assign EX_field_wire = EX_field;
-    assign EX_funct3_wire = EX_funct3;
+    assign EX_op1 = (EX_ALUOp == 1 && EX_ALUSrc == 1 && EX_RegSrc == 0 && EX_RegWrite == 1) ? 0 : EX_rs1_data_final;
+    assign EX_op2 = (EX_ALUSrc == 2'b00) ? EX_rs2_data_final : 
+                    (EX_ALUSrc == 2'b01) ? EX_imm : EX_csr_value;
 
-    ALU INST6 (
+    ALU INST7 (
         .op1(EX_op1), 
         .op2(EX_op2), 
-        .field(EX_field_wire), 
+        .field(EX_field), 
         .ALU_result(EX_ALU_result), 
         .zero(EX_zero), 
         .sign(EX_sign), 
@@ -232,19 +236,16 @@ module Core (
         .carry(EX_carry)
     );
 
-    assign EX_Branch_wire = EX_Branch;
-    assign EX_branch_prediction_wire = EX_branch_prediction;
-
     // Branch Resolution Unit compares prediction with actual branch result, yielding a prediction status that indicates whether the prediction was correct or not
 
-    BRU INST7 (
-        .EX_branch_prediction(EX_branch_prediction_wire),
-        .EX_Branch(EX_Branch_wire), 
+    BRU INST8 (
+        .EX_branch_prediction(EX_branch_prediction),
+        .EX_Branch(EX_Branch), 
         .zero(EX_zero), 
         .sign(EX_sign), 
         .overflow(EX_overflow), 
         .carry(EX_carry),
-        .funct3(EX_funct3_wire),
+        .funct3(EX_funct3),
         .branch_taken(EX_branch_taken),
         .prediction_status(EX_prediction_status)
     );
@@ -252,21 +253,18 @@ module Core (
 
     // ================================ MEMORY WRITEBACK ================================
     
-    assign MEM_ALU_result_wire = MEM_ALU_result;
-    assign MEM_funct3_wire = MEM_funct3;
-    assign MEM_MemWrite_wire = MEM_MemWrite;
     assign addrb = MEM_ALU_result[ADDR_WIDTH-1:0];
 
-    Store INST8 (
-        .MemWrite(MEM_MemWrite_wire),
-        .addrb(MEM_ALU_result_wire),
+    Store INST9 (
+        .MemWrite(MEM_MemWrite),
+        .addrb(MEM_ALU_result),
         .rs2_data(MEM_rs2_data_final),
         .clk_cycles(clk_cycles),
         .invalid_clk_cycles(invalid_clk_cycles),
         .retired_instructions(retired_instructions),
         .correct_predictions(correct_predictions),
         .total_predictions(total_predictions),
-        .funct3(MEM_funct3_wire),
+        .funct3(MEM_funct3),
         .web(web),
         .dib(dib)
     );
@@ -274,7 +272,7 @@ module Core (
 
     // =============================== REGFILE WRITEBACK ===============================+
 
-    WriteBack INST9 (
+    WriteBack INST10 (
         .ALU_result(WB_ALU_result), 
         .pc_imm(WB_pc_imm), 
         .pc_4(WB_pc_4),
@@ -283,38 +281,30 @@ module Core (
         .DMEM_word(dob),
         .rd_write_data(WB_rd_write_data)
     );
-    
-    assign ID_branch_prediction_wire = ID_branch_prediction;
-    assign ID_BTBhit_wire = ID_BTBhit;
-    assign EX_Jump_wire = EX_Jump;
-    assign EX_ALUSrc_wire = EX_ALUSrc;
-    assign EX_pc_4_wire = EX_pc_4;
-    assign EX_pc_imm_wire = EX_pc_imm;
-    assign EX_ALU_result_wire = EX_ALU_result;
 
     // Fetch Unit fetches next PC based on prediction status and control signals
     // Flushes the pipeline for incorrect predictions
 
-    Fetch INST10 (
+    Fetch INST11 (
         .IF_branch_prediction(IF_branch_prediction),
-        .ID_branch_prediction(ID_branch_prediction_wire),
+        .ID_branch_prediction(ID_branch_prediction),
         .prediction_status(EX_prediction_status),
         .IF_BTBhit(IF_BTBhit),
-        .ID_BTBhit(ID_BTBhit_wire),
+        .ID_BTBhit(ID_BTBhit),
         .IF_Branch(IF_Branch),
         .IF_Jump(IF_Jump),
         .ID_Branch(ID_Branch),
-        .EX_Branch(EX_Branch_wire),
+        .EX_Branch(EX_Branch),
         .ID_Jump(ID_Jump),
-        .EX_Jump(EX_Jump_wire),
+        .EX_Jump(EX_Jump),
         .ID_ALUSrc(ID_ALUSrc),
-        .EX_ALUSrc(EX_ALUSrc_wire),
+        .EX_ALUSrc(EX_ALUSrc),
         .IF_pc(IF_pc),
         .IF_pc_imm(IF_pc_imm),
-        .EX_pc_4(EX_pc_4_wire),
+        .EX_pc_4(EX_pc_4),
         .ID_pc_imm(ID_pc_imm),
-        .EX_pc_imm(EX_pc_imm_wire),
-        .rs1_imm(EX_ALU_result_wire),
+        .EX_pc_imm(EX_pc_imm),
+        .rs1_imm(EX_ALU_result),
         .IF_pc_4(IF_pc_4),
         .next_pc(next_pc),
         .ID_Flush(ID_Flush),
@@ -324,44 +314,32 @@ module Core (
 
     // ================================== FORWARDING ====================================
 
-    assign MEM_pc_4_wire = MEM_pc_4;
-    assign MEM_pc_imm_wire = MEM_pc_imm;
-    assign MEM_RegSrc_wire = MEM_RegSrc;
-    assign EX_rs1_wire = EX_rs1;
-    assign EX_rs2_wire = EX_rs2;
-    assign MEM_rs2_wire = MEM_rs2;
-    assign MEM_rd_wire = MEM_rd;
-    assign EX_ValidReg_wire = EX_ValidReg;
-    assign MEM_ValidReg_wire = MEM_ValidReg;
-    assign WB_ValidReg_wire = WB_ValidReg;
-    assign MEM_MemRead_wire = MEM_MemRead;
-    assign WB_MemRead_wire = WB_MemRead;
-
     // Forward Unit passes data to EX and MEM stages for Read After Write (RAW) hazards
     // 3 types of forwards:
     // 1) MEM -> EX
     // 2) WB -> EX
     // 3) WB -> MEM 
 
-    ForwardUnit INST11 (
-        .MEM_ALU_result(MEM_ALU_result_wire),
-        .MEM_pc_4(MEM_pc_4_wire),
-        .MEM_pc_imm(MEM_pc_imm_wire),
-        .MEM_RegSrc(MEM_RegSrc_wire),
+    ForwardUnit INST12 (
+        .MEM_ALU_result(MEM_ALU_result),
+        .MEM_pc_4(MEM_pc_4),
+        .MEM_pc_imm(MEM_pc_imm),
+        .MEM_RegSrc(MEM_RegSrc),
+        .MEM_csr_write_data(MEM_csr_write_data),
         .WB_rd_write_data(WB_rd_write_data),
-        .EX_rs1(EX_rs1_wire), 
-        .EX_rs2(EX_rs2_wire), 
-        .MEM_rs2(MEM_rs2_wire),
-        .MEM_rd(MEM_rd_wire), 
-        .WB_rd(WB_rd_wire),
-        .EX_rs1_valid(EX_ValidReg_wire[1]),
-        .EX_rd_valid(EX_ValidReg_wire[2]),
-        .MEM_rs2_valid(MEM_ValidReg_wire[0]),
-        .MEM_rd_valid(MEM_ValidReg_wire[2]),
-        .WB_rs2_valid(WB_ValidReg_wire[0]),
-        .MEM_MemRead(MEM_MemRead_wire),
-        .MEM_MemWrite(MEM_MemWrite_wire),
-        .WB_MemRead(WB_MemRead_wire),
+        .EX_rs1(EX_rs1), 
+        .EX_rs2(EX_rs2), 
+        .MEM_rs2(MEM_rs2),
+        .MEM_rd(MEM_rd), 
+        .WB_rd(WB_rd),
+        .EX_rs1_valid(EX_ValidReg[1]),
+        .EX_rd_valid(EX_ValidReg[2]),
+        .MEM_rs2_valid(MEM_ValidReg[0]),
+        .MEM_rd_valid(MEM_ValidReg[2]),
+        .WB_rs2_valid(WB_ValidReg[0]),
+        .MEM_MemRead(MEM_MemRead),
+        .MEM_MemWrite(MEM_MemWrite),
+        .WB_MemRead(WB_MemRead),
         .EX_rs1_fwd(EX_rs1_fwd), 
         .EX_rs2_fwd(EX_rs2_fwd),
         .MEM_rs2_fwd(MEM_rs2_fwd),
@@ -376,16 +354,13 @@ module Core (
 
 
     // =================================== STALLING =====================================
-    
-    assign EX_MemRead_wire = EX_MemRead;
-    assign EX_rd_wire = EX_rd;
 
     // Stall Unit freezes the pipeline for load-use hazards
 
-    StallUnit INST12 (
-        .EX_MemRead(EX_MemRead_wire),
+    StallUnit INST13 (
+        .EX_MemRead(EX_MemRead),
         .ID_MemWrite(ID_MemWrite),
-        .EX_rd(EX_rd_wire),
+        .EX_rd(EX_rd),
         .ID_rs1(ID_rs1),
         .ID_rs2(ID_rs2),
         .ID_rs1_valid(ID_ValidReg[1]),
@@ -395,8 +370,6 @@ module Core (
 
 
     // *********************************************************************************************************** SEQUENTIAL LOGIC ***************************************************************************************************************************
-    
-    integer i;
     
     // IF
 
@@ -481,8 +454,8 @@ module Core (
             EX_field <= 4'b0;
             EX_ValidReg <= 3'b0;
             EX_ALUOp <= 2'b0;
-            EX_RegSrc <= 2'b0;
-            EX_ALUSrc <= 1'b0;
+            EX_RegSrc <= 3'b0;
+            EX_ALUSrc <= 2'b0;
             EX_RegWrite <= 1'b0;
             EX_MemRead <= 1'b0;
             EX_MemWrite <= 1'b0;
@@ -495,8 +468,11 @@ module Core (
             EX_rd <= 5'b0;
             EX_rs1 <= 5'b0;
             EX_rs2 <= 5'b0;
+            EX_csr_addr <= 12'b0;
+            EX_csr_write <= 1'b0;
+            EX_csr_value <= 32'b0;
             
-            for (i = 0; i < 256; i = i+1) begin
+            for (int i = 0; i < 256; i = i+1) begin
 
                 BHT[i] <= 2'b01;
 
@@ -515,8 +491,8 @@ module Core (
                 EX_field <= 4'b0;
                 EX_ValidReg <= 3'b0;
                 EX_ALUOp <= 2'b0;
-                EX_RegSrc <= 2'b0;
-                EX_ALUSrc <= 1'b0;
+                EX_RegSrc <= 3'b0;
+                EX_ALUSrc <= 2'b0;
                 EX_RegWrite <= 1'b0;
                 EX_MemRead <= 1'b0;
                 EX_MemWrite <= 1'b0;
@@ -529,6 +505,9 @@ module Core (
                 EX_rd <= 5'b0;
                 EX_rs1 <= 5'b0;
                 EX_rs2 <= 5'b0;
+                EX_csr_addr <= 12'b0;
+                EX_csr_write <= 1'b0;
+                EX_csr_value <= 32'b0;
             
             end
            
@@ -538,14 +517,15 @@ module Core (
                 EX_field <= 4'b0;
                 EX_ValidReg <= 3'b0;
                 EX_ALUOp <= 2'b0;
-                EX_RegSrc <= 2'b0;
-                EX_ALUSrc <= 1'b0;
+                EX_RegSrc <= 3'b0;
+                EX_ALUSrc <= 2'b0;
                 EX_RegWrite <= 1'b0;
                 EX_MemRead <= 1'b0;
                 EX_MemWrite <= 1'b0;
                 EX_Branch <= 1'b0;
                 EX_branch_prediction <= 2'b0;
                 EX_Jump <= 1'b0;
+                EX_csr_write <= 1'b0;
    
             end
             
@@ -572,6 +552,9 @@ module Core (
                 EX_rd <= ID_rd;
                 EX_rs1 <= ID_rs1;
                 EX_rs2 <= ID_rs2;
+                EX_csr_addr <= ID_csr_addr;
+                EX_csr_write <= ID_csr_write;
+                EX_csr_value <= ID_csr_value;
             
             end
             
@@ -630,6 +613,9 @@ module Core (
             MEM_rs2_data <= 0;
             MEM_rs2 <= 0;
             MEM_rd <= 0;
+            MEM_csr_addr <= 0;
+            MEM_csr_write <= 0;
+            MEM_csr_value <= 0;
         
         end else begin
         
@@ -645,6 +631,9 @@ module Core (
             MEM_rs2_data <= EX_rs2_data_final;
             MEM_rs2 <= EX_rs2;
             MEM_rd <= EX_rd;
+            MEM_csr_addr <= EX_csr_addr;
+            MEM_csr_write <= EX_csr_write;
+            MEM_csr_value <= EX_csr_value;
           
         end
     
@@ -666,6 +655,9 @@ module Core (
             WB_ALU_result <= 0;
             WB_rd <= 0;
             retired_instructions <= 0;
+            WB_csr_addr <= 0;
+            WB_csr_write <= 0;
+            WB_csr_value <= 0;
         
         end else begin
 
@@ -680,6 +672,9 @@ module Core (
             WB_RegWrite <= MEM_RegWrite;
             WB_ALU_result <= MEM_ALU_result;
             WB_rd <= MEM_rd;
+            WB_csr_addr <= MEM_csr_addr;
+            WB_csr_write <= MEM_csr_write;
+            WB_csr_value <= MEM_csr_value;
         
         end
     

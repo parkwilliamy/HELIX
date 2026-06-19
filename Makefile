@@ -1,9 +1,10 @@
 ROOT := $(dir $(realpath $(lastword $(MAKEFILE_LIST))))
+COMPILER_FLAGS := -march=rv32i -mabi=ilp32 -mstrict-align -ffreestanding -fno-builtin -nostdlib -nostartfiles -T ./scripts/link.ld ./tests/start.s -O0
 PROG := 
 PROG_DIR := tests/debug
 VERILATOR := verilator
-COMPILER_FLAGS := -march=rv32i -mabi=ilp32 -mstrict-align -ffreestanding -fno-builtin -nostdlib -nostartfiles -T ./scripts/link.ld ./tests/start.s -O0
 LINT_FLAGS := --lint-only -Wall -Wno-fatal --top-module top
+SRCS := packages/*.sv rtl/mem/*.sv rtl/unit/*.sv rtl/system/*.sv 
 COMPLIANCE_FLAGS := --cc --exe --build -j 0 --Mdir compliance/obj_dir --top-module top_tb
 FIRST_PKG := packages/top_constants.sv
 PKGS := $(FIRST_PKG) $(filter-out $(FIRST_PKG),$(shell find packages -name '*.sv'))
@@ -24,7 +25,7 @@ default:
 	riscv32-unknown-elf-objcopy -O binary $(PROG_DIR)/out/$(PROG).elf $(PROG_DIR)/out/$(PROG).bin
 	hexdump -v -e '1/4 "%08X\n"' $(PROG_DIR)/out/$(PROG).bin > $(PROG_DIR)/hex/$(PROG).hex
 lint:
-	$(VERILATOR) $(LINT_FLAGS) -f $(SRCS)
+	$(VERILATOR) $(LINT_FLAGS) -y packages -y rtl/mem -y rtl/unit -y rtl/system -sv $(SRCS)
 
 build:
 	rm -rf ./out/*

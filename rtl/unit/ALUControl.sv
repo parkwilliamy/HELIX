@@ -1,6 +1,6 @@
 `timescale 1ns/1ps
 
-module ALUControl(
+module ALUControl (
     input logic sub_bit,
     input logic [2:0] funct3,
     input logic [1:0] ALUOp,
