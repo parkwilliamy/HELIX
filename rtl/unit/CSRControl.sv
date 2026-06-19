@@ -7,9 +7,9 @@ module CSRControl
     input logic [2:0] funct3,
     input logic [11:0] ID_csr_addr, WB_csr_addr,
     input logic [4:0] rs1, rd,
-    input logic [XLEN-1:0] ID_rs1_data, WB_csr_write_data,
+    input logic [XLEN-1:0] ID_rs1_data, 
     output logic ID_csr_write,
-    output logic [XLEN-1:0] csr_value, ID_csr_write_data
+    output logic [XLEN-1:0] csr_value
 );
 
     // This module handles CSR control for reads and writes
@@ -43,13 +43,13 @@ module CSRControl
 
             case (funct3)
 
-                3'b001: ID_csr_write_data = ID_rs1_data;
-                3'b010: ID_csr_write_data = ID_rs1_data;
-                3'b011: ID_csr_write_data = ID_rs1_data;
-                3'b101: ID_csr_write_data = {rs1, 27'b0};
-                3'b110: ID_csr_write_data = {rs1, 27'b0};
-                3'b111: ID_csr_write_data = {rs1, 27'b0};
-                default: ID_csr_write_data = 0;
+                3'b001: WB_csr_write_data = ID_rs1_data;
+                3'b010: WB_csr_write_data = ID_rs1_data;
+                3'b011: WB_csr_write_data = ID_rs1_data;
+                3'b101: WB_csr_write_data = {rs1, 27'b0};
+                3'b110: WB_csr_write_data = {rs1, 27'b0};
+                3'b111: WB_csr_write_data = {rs1, 27'b0};
+                default: WB_csr_write_data = 0;
 
             endcase
 

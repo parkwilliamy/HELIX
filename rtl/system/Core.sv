@@ -48,7 +48,7 @@ module Core (
     logic [2:0] MEM_funct3, MEM_ValidReg, MEM_RegSrc;
     logic MEM_MemRead, MEM_MemWrite, MEM_RegWrite, MEM_csr_write;
     logic [XLEN-1:0] MEM_pc_imm, MEM_ALU_result, MEM_rs2_data, MEM_csr_value, MEM_csr_write_data;
-    logic [4:0] MEM_rs2, MEM_rd;
+    logic [4:0] MEM_rs1, MEM_rs2, MEM_rd;
     logic [11:0] MEM_csr_addr;
 
     // WB
@@ -58,7 +58,7 @@ module Core (
     logic WB_MemRead;
     logic WB_RegWrite;
     logic WB_csr_write;
-    logic [4:0] WB_rd;
+    logic [4:0] WB_rs1, WB_rd;
     logic [11:0] WB_csr_addr;
 
 
@@ -611,6 +611,7 @@ module Core (
             MEM_MemRead <= 0;
             MEM_MemWrite <= 0;
             MEM_ALU_result <= 0;
+            MEM_rs1 <= 0;
             MEM_rs2_data <= 0;
             MEM_rs2 <= 0;
             MEM_rd <= 0;
@@ -629,6 +630,7 @@ module Core (
             MEM_MemRead <= EX_MemRead;
             MEM_MemWrite <= EX_MemWrite;
             MEM_ALU_result <= EX_ALU_result;
+            MEM_rs1 <= EX_rs1;
             MEM_rs2_data <= EX_rs2_data_final;
             MEM_rs2 <= EX_rs2;
             MEM_rd <= EX_rd;
@@ -654,6 +656,7 @@ module Core (
             WB_MemRead <= 0;
             WB_RegWrite <= 0;
             WB_ALU_result <= 0;
+            WB_rs1 <= 0;
             WB_rd <= 0;
             retired_instructions <= 0;
             WB_csr_addr <= 0;
@@ -672,6 +675,7 @@ module Core (
             WB_MemRead <= MEM_MemRead;
             WB_RegWrite <= MEM_RegWrite;
             WB_ALU_result <= MEM_ALU_result;
+            WB_rs1 <= MEM_rs1;
             WB_rd <= MEM_rd;
             WB_csr_addr <= MEM_csr_addr;
             WB_csr_write <= MEM_csr_write;
