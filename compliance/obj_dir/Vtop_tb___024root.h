@@ -28,8 +28,8 @@ class alignas(VL_CACHE_LINE_BYTES) Vtop_tb___024root final : public VerilatedMod
         CData/*3:0*/ top_tb__DOT__INST2__DOT__EX_field;
         CData/*2:0*/ top_tb__DOT__INST2__DOT__EX_ValidReg;
         CData/*2:0*/ top_tb__DOT__INST2__DOT__EX_funct3;
+        CData/*2:0*/ top_tb__DOT__INST2__DOT__EX_RegSrc;
         CData/*1:0*/ top_tb__DOT__INST2__DOT__EX_ALUOp;
-        CData/*1:0*/ top_tb__DOT__INST2__DOT__EX_RegSrc;
         CData/*1:0*/ top_tb__DOT__INST2__DOT__EX_branch_prediction;
         CData/*1:0*/ top_tb__DOT__INST2__DOT__EX_ALUSrc;
         CData/*0:0*/ top_tb__DOT__INST2__DOT__EX_RegWrite;
@@ -44,7 +44,7 @@ class alignas(VL_CACHE_LINE_BYTES) Vtop_tb___024root final : public VerilatedMod
         CData/*7:0*/ top_tb__DOT__INST2__DOT__EX_BHTaddr;
         CData/*2:0*/ top_tb__DOT__INST2__DOT__MEM_funct3;
         CData/*2:0*/ top_tb__DOT__INST2__DOT__MEM_ValidReg;
-        CData/*1:0*/ top_tb__DOT__INST2__DOT__MEM_RegSrc;
+        CData/*2:0*/ top_tb__DOT__INST2__DOT__MEM_RegSrc;
         CData/*0:0*/ top_tb__DOT__INST2__DOT__MEM_MemRead;
         CData/*0:0*/ top_tb__DOT__INST2__DOT__MEM_MemWrite;
         CData/*0:0*/ top_tb__DOT__INST2__DOT__MEM_RegWrite;
@@ -53,7 +53,7 @@ class alignas(VL_CACHE_LINE_BYTES) Vtop_tb___024root final : public VerilatedMod
         CData/*4:0*/ top_tb__DOT__INST2__DOT__MEM_rd;
         CData/*2:0*/ top_tb__DOT__INST2__DOT__WB_funct3;
         CData/*2:0*/ top_tb__DOT__INST2__DOT__WB_ValidReg;
-        CData/*1:0*/ top_tb__DOT__INST2__DOT__WB_RegSrc;
+        CData/*2:0*/ top_tb__DOT__INST2__DOT__WB_RegSrc;
         CData/*0:0*/ top_tb__DOT__INST2__DOT__WB_MemRead;
         CData/*0:0*/ top_tb__DOT__INST2__DOT__WB_RegWrite;
         CData/*0:0*/ top_tb__DOT__INST2__DOT__WB_csr_write;
@@ -71,9 +71,9 @@ class alignas(VL_CACHE_LINE_BYTES) Vtop_tb___024root final : public VerilatedMod
         CData/*0:0*/ top_tb__DOT__INST2__DOT__ID_Jump;
         CData/*0:0*/ top_tb__DOT__INST2__DOT__ID_CSR;
         CData/*2:0*/ top_tb__DOT__INST2__DOT__ID_ValidReg;
+        CData/*2:0*/ top_tb__DOT__INST2__DOT__ID_RegSrc;
         CData/*1:0*/ top_tb__DOT__INST2__DOT__ID_ALUOp;
         CData/*1:0*/ top_tb__DOT__INST2__DOT__ID_ALUSrc;
-        CData/*1:0*/ top_tb__DOT__INST2__DOT__ID_RegSrc;
         CData/*3:0*/ top_tb__DOT__INST2__DOT__ID_field;
         CData/*0:0*/ top_tb__DOT__INST2__DOT__EX_Flush;
         CData/*1:0*/ top_tb__DOT__INST2__DOT__EX_prediction_status;
@@ -116,9 +116,11 @@ class alignas(VL_CACHE_LINE_BYTES) Vtop_tb___024root final : public VerilatedMod
         IData/*31:0*/ top_tb__DOT__INST2__DOT__MEM_pc_imm;
         IData/*31:0*/ top_tb__DOT__INST2__DOT__MEM_ALU_result;
         IData/*31:0*/ top_tb__DOT__INST2__DOT__MEM_rs2_data;
+        IData/*31:0*/ top_tb__DOT__INST2__DOT__MEM_csr_value;
         IData/*31:0*/ top_tb__DOT__INST2__DOT__WB_pc_imm;
         IData/*31:0*/ top_tb__DOT__INST2__DOT__WB_pc_4;
         IData/*31:0*/ top_tb__DOT__INST2__DOT__WB_ALU_result;
+        IData/*31:0*/ top_tb__DOT__INST2__DOT__WB_csr_value;
         IData/*31:0*/ top_tb__DOT__INST2__DOT__WB_csr_write_data;
         IData/*31:0*/ top_tb__DOT__INST2__DOT__ID_instruction;
         IData/*31:0*/ top_tb__DOT__INST2__DOT__ID_imm;
@@ -144,6 +146,8 @@ class alignas(VL_CACHE_LINE_BYTES) Vtop_tb___024root final : public VerilatedMod
         VlUnpacked<IData/*31:0*/, 32> top_tb__DOT__INST2__DOT__INST3__DOT__reg_file;
         VlUnpacked<QData/*63:0*/, 1> __VstlTriggered;
         VlUnpacked<QData/*63:0*/, 1> __VactTriggered;
+    };
+    struct {
         VlUnpacked<QData/*63:0*/, 1> __VnbaTriggered;
     };
     VlNBACommitQueue<VlUnpacked<CData/*1:0*/, 256>, false, CData/*1:0*/, 1> __VdlyCommitQueuetop_tb__DOT__INST2__DOT__BHT;

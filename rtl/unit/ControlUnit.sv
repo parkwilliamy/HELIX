@@ -4,7 +4,7 @@ import top_constants::*;
 
 module ControlUnit (
     input logic [6:0] opcode,
-    output logic [2:0] ValidReg, RegSrc
+    output logic [2:0] ValidReg, RegSrc,
     output logic [1:0] ALUOp, ALUSrc,
     output logic RegWrite, MemRead, MemWrite, Branch, Jump, Valid, CSR
     // ValidReg: {rs2, rs1, rd} are valid registers (validity is determined by instruction type, for example, only rs1 and rs2 valid in B-type instructions)

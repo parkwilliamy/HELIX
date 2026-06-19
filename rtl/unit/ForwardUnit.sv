@@ -3,7 +3,7 @@
 import top_constants::*;
 
 module ForwardUnit (
-    input logic [XLEN-1:0] MEM_ALU_result, MEM_pc_4, MEM_pc_imm, MEM_csr_write_data, WB_rd_write_data, 
+    input logic [XLEN-1:0] MEM_ALU_result, MEM_pc_4, MEM_pc_imm, MEM_csr_value, WB_rd_write_data, 
     input logic [2:0] MEM_RegSrc,
     input logic [4:0] EX_rs1, EX_rs2, MEM_rs2, MEM_rd, WB_rd,
     input logic EX_rs1_valid, EX_rd_valid, MEM_rs2_valid ,MEM_rd_valid, WB_rs2_valid, MEM_MemRead, MEM_MemWrite, WB_MemRead,
@@ -35,7 +35,7 @@ module ForwardUnit (
             0: MEM_rd_write_data = MEM_ALU_result;
             2: MEM_rd_write_data = MEM_pc_imm;
             3: MEM_rd_write_data = MEM_pc_4;
-            4: MEM_rd_write_data = MEM_csr_write_data;
+            4: MEM_rd_write_data = MEM_csr_value;
             default: MEM_rd_write_data = 0;
 
         endcase

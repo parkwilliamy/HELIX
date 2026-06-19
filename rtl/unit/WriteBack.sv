@@ -3,8 +3,8 @@
 import top_constants::*;
 
 module WriteBack (
-    input logic [XLEN-1:0] ALU_result, pc_imm, pc_4,
-    input logic [2:0] funct3, RegSrc
+    input logic [XLEN-1:0] ALU_result, pc_imm, pc_4, csr_value,
+    input logic [2:0] funct3, RegSrc,
     input logic [XLEN-1:0] DMEM_word,
     output logic [XLEN-1:0] rd_write_data
 );
@@ -38,6 +38,7 @@ module WriteBack (
             1: rd_write_data = DMEM_result;
             2: rd_write_data = pc_imm;
             3: rd_write_data = pc_4;
+            4: rd_write_data = csr_value;
             default: rd_write_data = 0;
 
         endcase
