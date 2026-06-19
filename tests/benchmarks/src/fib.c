@@ -22,7 +22,6 @@ int main() {
     *CORRECT_PREDICTIONS_ADDR = 0;
     *TOTAL_PREDICTIONS_ADDR = 0;
 
-    while (1);
-
+    return 0;
 }
 

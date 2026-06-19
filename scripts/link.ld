@@ -1,5 +1,6 @@
 /* linker.ld — IMEM: [0x00000000, 0x00005000)
- *             DMEM: [0x00005000, 0x00008000)
+ *             DMEM: [0x00005000, 0x00007900)
+ *             IO:   [0x00007900, 0x00008000)
  */
 
 OUTPUT_ARCH(riscv)
@@ -8,10 +9,10 @@ ENTRY(_start)
 MEMORY
 {
   IMEM (rx)  : ORIGIN = 0x00000000, LENGTH = 0x00005000
-  DMEM (rwx) : ORIGIN = 0x00005000, LENGTH = 0x00003000
+  DMEM (rwx) : ORIGIN = 0x00005000, LENGTH = 0x00002900
+  IO (rwx)   : ORIGIN = 0x00007900, LENGTH = 0x00000100
 }
 
-/* Handy global symbols */
 PROVIDE(__imem_start = ORIGIN(IMEM));
 PROVIDE(__imem_end   = ORIGIN(IMEM) + LENGTH(IMEM));
 PROVIDE(__dmem_start = ORIGIN(DMEM));
@@ -55,6 +56,7 @@ SECTIONS
     __data_start = .;
     *(.data .data.*)
     *(.sdata .sdata.*)
+    . = ALIGN(4);
     __data_end = .;
   } > DMEM AT > IMEM
 
@@ -69,13 +71,9 @@ SECTIONS
     *(.bss .bss.*)
     *(.sbss .sbss.*)
     *(COMMON)
+    . = ALIGN(4);
     __bss_end = .;
   } > DMEM
-
-  /* Optional heap start/end */
-  . = ALIGN(8);
-  __heap_start = .;
-  __heap_end   = ORIGIN(DMEM) + LENGTH(DMEM);
 
   /* End symbol some libs expect */
   PROVIDE(end = .);

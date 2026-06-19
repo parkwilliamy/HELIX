@@ -12,7 +12,7 @@ set outputDir [lindex $argv 0]
 # STEP#2: setup design sources and constraints
 
 set_param general.maxThreads 8
-source scripts/startup.tcl -notrace
+source scripts/tcl/startup.tcl -notrace
 read_verilog -sv [ glob ./packages/*.sv ] 
 read_verilog -sv [ glob ./rtl/mem/*.sv ] 
 read_verilog -sv [ glob ./rtl/system/*.sv ]

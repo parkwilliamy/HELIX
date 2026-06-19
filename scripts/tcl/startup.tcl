@@ -1,4 +1,3 @@
-# scripts/prepare_ip.tcl
 puts "==================== Initializing project ===================="
 create_project -in_memory -part xc7a35tcpg236-1
 set_param general.maxThreads 8
