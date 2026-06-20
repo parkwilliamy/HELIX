@@ -1,5 +1,5 @@
 ROOT := $(dir $(realpath $(lastword $(MAKEFILE_LIST))))
-COMPILER_FLAGS := -march=rv32i -mabi=ilp32 -mstrict-align -ffreestanding -fno-builtin -nostdlib -nostartfiles -T ./scripts/link.ld ./tests/start.s -O0
+COMPILER_FLAGS := -march=rv32i_zicsr -mabi=ilp32 -mstrict-align -ffreestanding -fno-builtin -nostdlib -nostartfiles -T ./scripts/link.ld ./tests/start.s -O0
 PROG := 
 PROG_DIR := tests/debug
 VERILATOR := verilator

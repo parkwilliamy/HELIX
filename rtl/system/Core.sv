@@ -37,7 +37,7 @@ module Core (
     logic [2:0] EX_ValidReg, EX_funct3, EX_RegSrc;
     logic [1:0] EX_ALUOp, EX_branch_prediction, EX_ALUSrc;
     logic EX_RegWrite, EX_MemRead, EX_MemWrite, EX_Branch, EX_Jump, EX_csr_write;
-    logic [XLEN-1:0] EX_pc_4, EX_rs1_data, EX_rs2_data, EX_imm, EX_pc_imm, EX_csr_value, EX_csr_write_data;
+    logic [XLEN-1:0] EX_pc_4, EX_rs1_data, EX_rs2_data, EX_imm, EX_pc_imm, EX_csr_value;
     logic [4:0] EX_rs1, EX_rs2, EX_rd;
     logic [7:0] EX_BHTaddr;
     logic [11:0] EX_csr_addr;
@@ -47,13 +47,13 @@ module Core (
     logic [XLEN-1:0] MEM_pc_4;
     logic [2:0] MEM_funct3, MEM_ValidReg, MEM_RegSrc;
     logic MEM_MemRead, MEM_MemWrite, MEM_RegWrite, MEM_csr_write;
-    logic [XLEN-1:0] MEM_pc_imm, MEM_ALU_result, MEM_rs2_data, MEM_csr_value, MEM_csr_write_data;
+    logic [XLEN-1:0] MEM_pc_imm, MEM_ALU_result, MEM_rs2_data, MEM_csr_value, MEM_rs1_data;
     logic [4:0] MEM_rs1, MEM_rs2, MEM_rd;
     logic [11:0] MEM_csr_addr;
 
     // WB
 
-    logic [XLEN-1:0] WB_pc_imm, WB_pc_4, WB_ALU_result, WB_csr_value, WB_csr_write_data;
+    logic [XLEN-1:0] WB_pc_imm, WB_pc_4, WB_ALU_result, WB_csr_value, WB_rs1_data;
     logic [2:0] WB_funct3, WB_ValidReg, WB_RegSrc;
     logic WB_MemRead;
     logic WB_RegWrite;
@@ -73,7 +73,7 @@ module Core (
 
     // ID
 
-    logic [XLEN-1:0] ID_instruction, ID_imm, ID_rs1_data, ID_rs2_data, ID_pc_imm, ID_csr_value, ID_csr_write_data;
+    logic [XLEN-1:0] ID_instruction, ID_imm, ID_rs1_data, ID_rs2_data, ID_pc_imm, ID_csr_value;
     logic [6:0] ID_opcode;
     logic [11:7] ID_rd;
     logic [14:12] ID_funct3;
@@ -211,11 +211,10 @@ module Core (
         .WB_csr_addr(WB_csr_addr),
         .rs1(ID_rs1),
         .rd(ID_rd),
-        .ID_rs1_data(ID_rs1_data),
-        .WB_csr_write_data(WB_csr_write_data),
+        .WB_rs1_data(WB_rs1_data),
+        .WB_csr_value(WB_csr_value),
         .ID_csr_write(ID_csr_write),
-        .csr_value(ID_csr_value),
-        .ID_csr_write_data(ID_csr_write_data)
+        .csr_value(ID_csr_value)
     );
     
 
@@ -618,6 +617,7 @@ module Core (
             MEM_csr_addr <= 0;
             MEM_csr_write <= 0;
             MEM_csr_value <= 0;
+            MEM_rs1_data <= 0;
         
         end else begin
         
@@ -637,6 +637,7 @@ module Core (
             MEM_csr_addr <= EX_csr_addr;
             MEM_csr_write <= EX_csr_write;
             MEM_csr_value <= EX_csr_value;
+            MEM_rs1_data <= EX_rs1_data_final;
           
         end
     
@@ -662,6 +663,7 @@ module Core (
             WB_csr_addr <= 0;
             WB_csr_write <= 0;
             WB_csr_value <= 0;
+            WB_rs1_data <= 0;
         
         end else begin
 
@@ -680,6 +682,7 @@ module Core (
             WB_csr_addr <= MEM_csr_addr;
             WB_csr_write <= MEM_csr_write;
             WB_csr_value <= MEM_csr_value;
+            WB_rs1_data <= MEM_rs1_data;
         
         end
     

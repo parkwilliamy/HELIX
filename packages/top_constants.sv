@@ -32,7 +32,7 @@ package top_constants;
     } opcode_encoding;
 
     typedef enum logic [11:0] { // Addresses for different CSRs
-        TEST_CSR = 12'b0
+        MCYCLE = 12'hB00
     } csr_encoding;
 
 endpackage
