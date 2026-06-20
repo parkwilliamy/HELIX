@@ -5,7 +5,6 @@ PROG_DIR := tests/debug
 VERILATOR := verilator
 LINT_FLAGS := --lint-only -Wall -Wno-fatal --top-module top
 SRCS := packages/*.sv rtl/mem/*.sv rtl/unit/*.sv rtl/system/*.sv 
-COMPLIANCE_FLAGS := --cc --exe --build -j 0 --Mdir compliance/obj_dir --top-module top_tb
 FIRST_PKG := packages/top_constants.sv
 PKGS := $(FIRST_PKG) $(filter-out $(FIRST_PKG),$(shell find packages -name '*.sv'))
 RTL := rtl/mem/*.sv rtl/system/*.sv rtl/unit/*.sv
@@ -15,15 +14,24 @@ PLUS_ARGS ?=
 
 ifeq ($(WAVE), 1)
 SIM_ARGS ?= -nolog -gui -view $(ROOT)wave/$(TOP)_tb_sim.wcfg $(PLUS_ARGS)
+COMPLIANCE_FLAGS ?= --cc --exe --build --trace -j 0 --Mdir compliance/obj_dir_wave --top-module top_tb
+WRAP ?= compliance/top_tb_wave.cpp 
 else
 SIM_ARGS ?= -runall -log $(TOP)_sim.log $(PLUS_ARGS)
+COMPLIANCE_FLAGS ?= --cc --exe --build -j 0 --Mdir compliance/obj_dir --top-module top_tb
+WRAP ?= compliance/top_tb.cpp 
 endif
 
-.PHONY: lint build sim compliance synth fpga bit
+.PHONY: asm lint build sim compliance synth fpga bit
 default:
 	riscv32-unknown-elf-gcc $(COMPILER_FLAGS) $(PROG_DIR)/src/$(PROG).c -o $(PROG_DIR)/out/$(PROG).elf
 	riscv32-unknown-elf-objcopy -O binary $(PROG_DIR)/out/$(PROG).elf $(PROG_DIR)/out/$(PROG).bin
 	hexdump -v -e '1/4 "%08X\n"' $(PROG_DIR)/out/$(PROG).bin > $(PROG_DIR)/hex/$(PROG).hex
+asm:
+	riscv32-unknown-elf-gcc $(COMPILER_FLAGS) $(PROG_DIR)/asm/$(PROG).s -o $(PROG_DIR)/out/$(PROG).elf
+	riscv32-unknown-elf-objcopy -O binary $(PROG_DIR)/out/$(PROG).elf $(PROG_DIR)/out/$(PROG).bin
+	hexdump -v -e '1/4 "%08X\n"' $(PROG_DIR)/out/$(PROG).bin > $(PROG_DIR)/hex/$(PROG).hex
+
 lint:
 	$(VERILATOR) $(LINT_FLAGS) -y packages -y rtl/mem -y rtl/unit -y rtl/system -sv $(SRCS)
 
@@ -36,7 +44,7 @@ build:
 sim:
 	cd ./out/ && xsim $(TOP)_tb_sim $(SIM_ARGS)
 compliance:
-	verilator $(COMPLIANCE_FLAGS) -I./packages -I./rtl/mem/ $(PKGS) $(RTL) ./rtl/sim/*.sv ../tb/system/top_tb.sv compliance/top_tb.cpp -o top_tb_sim
+	verilator $(COMPLIANCE_FLAGS) -I./packages -I./rtl/mem/ $(PKGS) $(RTL) ./rtl/sim/*.sv ../tb/system/top_tb.sv $(WRAP) -o top_tb_sim
 synth:
 	vivado -mode batch -source ./scripts/tcl/synth.tcl -nolog -nojournal -notrace -tclargs ./synth
 	rm dfx_runtime.txt

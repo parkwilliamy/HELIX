@@ -23,49 +23,6 @@ module Core (
 
     logic [XLEN-1:0] IF_pc;
     logic [XLEN-1:0] next_pc;
-
-    // ID
-
-    logic [XLEN-1:0] ID_pc, ID_pc_4;
-    logic [7:0] ID_BHTaddr;
-    logic [1:0] ID_branch_prediction;
-    logic ID_BTBhit;
-    
-    // EX
-    
-    logic [3:0] EX_field;
-    logic [2:0] EX_ValidReg, EX_funct3, EX_RegSrc;
-    logic [1:0] EX_ALUOp, EX_branch_prediction, EX_ALUSrc;
-    logic EX_RegWrite, EX_MemRead, EX_MemWrite, EX_Branch, EX_Jump, EX_csr_write;
-    logic [XLEN-1:0] EX_pc_4, EX_rs1_data, EX_rs2_data, EX_imm, EX_pc_imm, EX_csr_value;
-    logic [4:0] EX_rs1, EX_rs2, EX_rd;
-    logic [7:0] EX_BHTaddr;
-    logic [11:0] EX_csr_addr;
-
-    // MEM
-
-    logic [XLEN-1:0] MEM_pc_4;
-    logic [2:0] MEM_funct3, MEM_ValidReg, MEM_RegSrc;
-    logic MEM_MemRead, MEM_MemWrite, MEM_RegWrite, MEM_csr_write;
-    logic [XLEN-1:0] MEM_pc_imm, MEM_ALU_result, MEM_rs2_data, MEM_csr_value, MEM_rs1_data;
-    logic [4:0] MEM_rs1, MEM_rs2, MEM_rd;
-    logic [11:0] MEM_csr_addr;
-
-    // WB
-
-    logic [XLEN-1:0] WB_pc_imm, WB_pc_4, WB_ALU_result, WB_csr_value, WB_rs1_data;
-    logic [2:0] WB_funct3, WB_ValidReg, WB_RegSrc;
-    logic WB_MemRead;
-    logic WB_RegWrite;
-    logic WB_csr_write;
-    logic [4:0] WB_rs1, WB_rd;
-    logic [11:0] WB_csr_addr;
-
-
-    // ****************************************************************************************************** PIPELINE NETS ***********************************************************************************************************************************
-
-    // IF
-
     logic [XLEN-1:0] IF_pc_4, IF_pc_imm;
     logic IF_Branch, IF_Jump, BTBwrite, IF_BTBhit;
     logic [7:0] IF_BHTaddr;
@@ -73,6 +30,10 @@ module Core (
 
     // ID
 
+    logic [XLEN-1:0] ID_pc, ID_pc_4;
+    logic [7:0] ID_BHTaddr;
+    logic [1:0] ID_branch_prediction;
+    logic ID_BTBhit;
     logic [XLEN-1:0] ID_instruction, ID_imm, ID_rs1_data, ID_rs2_data, ID_pc_imm, ID_csr_value;
     logic [6:0] ID_opcode;
     logic [11:7] ID_rd;
@@ -88,24 +49,47 @@ module Core (
     
     // EX
     
+    logic [3:0] EX_field;
+    logic [2:0] EX_ValidReg, EX_funct3, EX_RegSrc;
+    logic [1:0] EX_ALUOp, EX_branch_prediction, EX_ALUSrc;
+    logic EX_RegWrite, EX_MemRead, EX_MemWrite, EX_Branch, EX_Jump, EX_csr_write, EX_csr_fwd;
+    logic [XLEN-1:0] EX_pc_4, EX_rs1_data, EX_rs2_data, EX_imm, EX_pc_imm, EX_csr_value;
+    logic [4:0] EX_rs1, EX_rs2, EX_rd;
+    logic [7:0] EX_BHTaddr;
+    logic [11:0] EX_csr_addr;
     logic EX_zero, EX_sign, EX_overflow, EX_carry, EX_Flush, EX_branch_taken, EX_rs1_fwd, EX_rs2_fwd;
     logic [XLEN-1:0] EX_op1, EX_op2, EX_rs1_fwd_data, EX_rs2_fwd_data, EX_rs1_data_final, EX_rs2_data_final, EX_ALU_result;
     logic [1:0] EX_prediction_status;
 
     // MEM
 
-    logic [XLEN-1:0] MEM_rs2_fwd_data, MEM_rs2_data_final;
+    logic [XLEN-1:0] MEM_pc_4;
+    logic [2:0] MEM_funct3, MEM_ValidReg, MEM_RegSrc;
+    logic MEM_MemRead, MEM_MemWrite, MEM_RegWrite, MEM_csr_write, MEM_csr_fwd;
+    logic [XLEN-1:0] MEM_pc_imm, MEM_ALU_result, MEM_rs2_data, MEM_csr_value, MEM_rs1_data;
+    logic [4:0] MEM_rs1, MEM_rs2, MEM_rd;
+    logic [11:0] MEM_csr_addr;
+    logic [XLEN-1:0] MEM_rs2_fwd_data, MEM_rs2_data_final, MEM_csr_value_final;
     logic MEM_rs2_fwd;
 
     // WB
 
-    logic [XLEN-1:0] WB_rd_write_data;
+    logic [XLEN-1:0] WB_pc_imm, WB_pc_4, WB_ALU_result, WB_csr_value, WB_rs1_data;
+    logic [2:0] WB_funct3, WB_ValidReg, WB_RegSrc;
+    logic WB_MemRead;
+    logic WB_RegWrite;
+    logic WB_csr_write;
+    logic [4:0] WB_rs1, WB_rd;
+    logic [11:0] WB_csr_addr;
+    logic [XLEN-1:0] WB_rd_write_data, WB_csr_write_data;
 
-    // ********************************************************************************************************  PERFORMANCE METRICS **************************************************************************************************************************
 
-    logic [XLEN-1:0] clk_cycles, invalid_clk_cycles, retired_instructions, correct_predictions, total_predictions;
+    // ********************************************************************************************************  CONTROL AND STATUS REGISTERS *****************************************************************************************************************
 
-    // CPI = (clk_cycles - invalid_clk_cycles) / (retired_instructions)
+    logic [63:0] mcycle;
+    logic [XLEN-1:0] minstret, correct_predictions, total_predictions;
+
+    // CPI = mcycle / minstret
     // Branch Predictor Accuracy = correct_predictions / total_predictions
 
 
@@ -206,15 +190,22 @@ module Core (
         .rst_n(rst_n),
         .CSR(ID_CSR),
         .WB_csr_write(WB_csr_write),
-        .funct3(ID_funct3),
+        .ID_funct3(ID_funct3),
+        .WB_funct3(WB_funct3),
         .ID_csr_addr(ID_csr_addr),
         .WB_csr_addr(WB_csr_addr),
-        .rs1(ID_rs1),
-        .rd(ID_rd),
+        .ID_rs1(ID_rs1),
+        .ID_rd(ID_rd),
+        .WB_rs1(WB_rs1),
         .WB_rs1_data(WB_rs1_data),
         .WB_csr_value(WB_csr_value),
+        .mcycle(mcycle),
+        .minstret(minstret),
+        .correct_predictions(correct_predictions),
+        .total_predictions(total_predictions),
         .ID_csr_write(ID_csr_write),
-        .csr_value(ID_csr_value)
+        .csr_value(ID_csr_value),
+        .WB_csr_write_data(WB_csr_write_data)
     );
     
 
@@ -258,11 +249,6 @@ module Core (
         .MemWrite(MEM_MemWrite),
         .addrb(MEM_ALU_result),
         .rs2_data(MEM_rs2_data_final),
-        .clk_cycles(clk_cycles),
-        .invalid_clk_cycles(invalid_clk_cycles),
-        .retired_instructions(retired_instructions),
-        .correct_predictions(correct_predictions),
-        .total_predictions(total_predictions),
         .funct3(MEM_funct3),
         .web(web),
         .dib(dib)
@@ -327,6 +313,7 @@ module Core (
         .MEM_RegSrc(MEM_RegSrc),
         .MEM_csr_value(MEM_csr_value),
         .WB_rd_write_data(WB_rd_write_data),
+        .WB_csr_write_data(WB_csr_write_data),
         .EX_rs1(EX_rs1), 
         .EX_rs2(EX_rs2), 
         .MEM_rs2(MEM_rs2),
@@ -340,17 +327,23 @@ module Core (
         .MEM_MemRead(MEM_MemRead),
         .MEM_MemWrite(MEM_MemWrite),
         .WB_MemRead(WB_MemRead),
+        .WB_csr_write(WB_csr_write),
+        .MEM_csr_addr(MEM_csr_addr),
+        .WB_csr_addr(WB_csr_addr),
         .EX_rs1_fwd(EX_rs1_fwd), 
         .EX_rs2_fwd(EX_rs2_fwd),
         .MEM_rs2_fwd(MEM_rs2_fwd),
         .EX_rs1_fwd_data(EX_rs1_fwd_data),
         .EX_rs2_fwd_data(EX_rs2_fwd_data),
-        .MEM_rs2_fwd_data(MEM_rs2_fwd_data)
+        .MEM_rs2_fwd_data(MEM_rs2_fwd_data),
+        .MEM_csr_fwd(MEM_csr_fwd),
+        .MEM_csr_value_final(MEM_csr_value_final)
     );
 
     assign EX_rs1_data_final = (EX_rs1_fwd) ? EX_rs1_fwd_data : EX_rs1_data;
     assign EX_rs2_data_final = (EX_rs2_fwd) ? EX_rs2_fwd_data : EX_rs2_data;
     assign MEM_rs2_data_final = (MEM_rs2_fwd) ? MEM_rs2_fwd_data : MEM_rs2_data;
+    assign MEM_csr_value_final = (MEM_csr_fwd) ? WB_csr_write_data : MEM_csr_value;
 
 
     // =================================== STALLING =====================================
@@ -378,14 +371,17 @@ module Core (
         if (!rst_n) begin
 
             IF_pc <= 32'b0; 
-            clk_cycles <= 0;
+            mcycle <= 0;
+            minstret <= 0;
+            correct_predictions <= 0;
+            total_predictions <= 0;
 
         end
 
         else begin
 
             if (!ID_Stall) IF_pc <= next_pc;
-            clk_cycles <= clk_cycles + 1; 
+            mcycle <= mcycle + 1; 
 
         end
 
@@ -396,8 +392,6 @@ module Core (
     always @ (posedge clk) begin
     
         if (!rst_n) begin
-        
-            invalid_clk_cycles <= 0;
 
             ID_PostFlush <= 0;
             ID_pc <= 32'b0;
@@ -409,8 +403,6 @@ module Core (
         end else begin
         
             ID_PostFlush <= 0;
-
-            if (!ID_Valid) invalid_clk_cycles <= invalid_clk_cycles + 1;
         
             if (ID_Flush) begin
             
@@ -659,7 +651,6 @@ module Core (
             WB_ALU_result <= 0;
             WB_rs1 <= 0;
             WB_rd <= 0;
-            retired_instructions <= 0;
             WB_csr_addr <= 0;
             WB_csr_write <= 0;
             WB_csr_value <= 0;
@@ -667,7 +658,7 @@ module Core (
         
         end else begin
 
-            if (WB_ValidReg != 3'b000) retired_instructions <= retired_instructions+1;
+            if (WB_ValidReg != 3'b000) minstret <= minstret+1;
         
             WB_pc_4 <= MEM_pc_4;
             WB_pc_imm <= MEM_pc_imm;
@@ -681,8 +672,23 @@ module Core (
             WB_rd <= MEM_rd;
             WB_csr_addr <= MEM_csr_addr;
             WB_csr_write <= MEM_csr_write;
-            WB_csr_value <= MEM_csr_value;
+            WB_csr_value <= MEM_csr_value_final;
             WB_rs1_data <= MEM_rs1_data;
+
+            if (WB_csr_write) begin
+
+                case (WB_csr_addr)
+
+                    MCYCLE: mcycle <= {32'b0, WB_csr_write_data};
+                    MINSTRET: minstret <= WB_csr_write_data;
+                    CORRECT_PREDICTIONS: correct_predictions <= WB_csr_write_data;
+                    TOTAL_PREDICTIONS: total_predictions <= WB_csr_write_data;
+                    default: begin // For Verilator
+                    end
+
+                endcase
+
+            end
         
         end
     

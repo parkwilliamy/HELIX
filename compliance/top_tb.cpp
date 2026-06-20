@@ -19,13 +19,8 @@ void tick(Vtop_tb* tb) {
 
 int main(int argc, char **argv) {
     Verilated::commandArgs(argc, argv);
-    //Verilated::traceEverOn(true);
 
     Vtop_tb* tb = new Vtop_tb;
-    //VerilatedVcdC* tfp = new VerilatedVcdC;
-
-    //tb->trace(tfp, 99);
-    //tfp->open("dump.vcd");
 
     tb->rst_n = 0;
     for (int i = 0; i < 2; ++i) tick(tb);

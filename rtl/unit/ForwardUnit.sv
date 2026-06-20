@@ -3,12 +3,15 @@
 import top_constants::*;
 
 module ForwardUnit (
-    input logic [XLEN-1:0] MEM_ALU_result, MEM_pc_4, MEM_pc_imm, MEM_csr_value, WB_rd_write_data, 
+    input logic [XLEN-1:0] MEM_ALU_result, MEM_pc_4, MEM_pc_imm, MEM_csr_value, WB_rd_write_data, WB_csr_write_data,
     input logic [2:0] MEM_RegSrc,
     input logic [4:0] EX_rs1, EX_rs2, MEM_rs2, MEM_rd, WB_rd,
-    input logic EX_rs1_valid, EX_rd_valid, MEM_rs2_valid ,MEM_rd_valid, WB_rs2_valid, MEM_MemRead, MEM_MemWrite, WB_MemRead,
+    input logic EX_rs1_valid, EX_rd_valid, MEM_rs2_valid ,MEM_rd_valid, WB_rs2_valid, MEM_MemRead, MEM_MemWrite, WB_MemRead, WB_csr_write,
+    input logic [11:0] MEM_csr_addr, WB_csr_addr,
     output logic EX_rs1_fwd, EX_rs2_fwd, MEM_rs2_fwd, // These signals indicate if one or more of these pipeline registers need data forwarded to them
-    output logic [XLEN-1:0] EX_rs1_fwd_data, EX_rs2_fwd_data, MEM_rs2_fwd_data // Data to forward to respective pipeline registers
+    output logic [XLEN-1:0] EX_rs1_fwd_data, EX_rs2_fwd_data, MEM_rs2_fwd_data, // Data to forward to respective pipeline registers
+    output logic MEM_csr_fwd,
+    output logic [XLEN-1:0] MEM_csr_value_final
 );
 
     logic EX_rs1_MEM_fwd, EX_rs2_MEM_fwd, EX_rs1_WB_fwd, EX_rs2_WB_fwd, MEM_rs2_WB_fwd;
@@ -19,11 +22,16 @@ module ForwardUnit (
     assign EX_rs2_MEM_fwd = (EX_rs2 == MEM_rd) && (EX_rd_valid && MEM_rs2_valid) && !MEM_MemRead; // MEM -> EX rd to rs2 forward
     assign EX_rs1_WB_fwd = (EX_rs1 == WB_rd) && (EX_rs1_valid && WB_rs2_valid); // WB -> EX rd to rs1 forward
     assign EX_rs2_WB_fwd = (EX_rs2 == WB_rd) && (EX_rd_valid && WB_rs2_valid); // WB -> EX rd to rs2 forward
-    assign MEM_rs2_WB_fwd = (MEM_rs2 == WB_rd) && (MEM_MemWrite && WB_MemRead) && (MEM_rd_valid && WB_rs2_valid); // WB -> MEM rd to rs2 forward (for load-stores)
-    
+    assign MEM_rs2_WB_fwd = (MEM_rs2 == WB_rd) && ((WB_csr_write) || ((MEM_MemWrite && WB_MemRead) && (MEM_rd_valid && WB_rs2_valid))); // WB -> MEM rd to rs2 forward (for load-stores)
+    //assign MEM_rs2_WB_fwd = (MEM_rs2 == WB_rd) && (WB_csr_write);
+
     assign EX_rs1_fwd = (EX_rs1_MEM_fwd || EX_rs1_WB_fwd) && (EX_rs1 != 0);
     assign EX_rs2_fwd = (EX_rs2_MEM_fwd || EX_rs2_WB_fwd) && (EX_rs2 != 0);
     assign MEM_rs2_fwd = MEM_rs2_WB_fwd && MEM_rs2 != 0;
+
+    // CSR Forwarding
+
+    assign MEM_csr_fwd = (MEM_csr_addr == WB_csr_addr);
 
     always_comb begin
     
