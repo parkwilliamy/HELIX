@@ -210,6 +210,10 @@ module Core (
         .ID_rd(ID_rd),
         .WB_rs1(WB.rs1),
         .WB_rs1_data(WB.rs1_data),
+        .mcycle(mcycle),
+        .minstret(minstret),
+        .correct_predictions(correct_predictions),
+        .total_predictions(total_predictions),
         .WB_csr_value(WB.csr_value),
         .ID_csr_write(ID_csr_write),
         .csr_value(ID_csr_value),
@@ -321,7 +325,6 @@ module Core (
         .MEM_RegSrc(MEM.RegSrc),
         .MEM_csr_value(MEM.csr_value),
         .WB_rd_write_data(WB_rd_write_data),
-        .WB_csr_write_data(WB_csr_write_data),
         .EX_rs1(EX.rs1),
         .EX_rs2(EX.rs2),
         .MEM_rs2(MEM.rs2),
@@ -344,8 +347,7 @@ module Core (
         .EX_rs1_fwd_data(EX_rs1_fwd_data),
         .EX_rs2_fwd_data(EX_rs2_fwd_data),
         .MEM_rs2_fwd_data(MEM_rs2_fwd_data),
-        .MEM_csr_fwd(MEM_csr_fwd),
-        .MEM_csr_value_final(MEM_csr_value_final)
+        .MEM_csr_fwd(MEM_csr_fwd)
     );
 
     assign EX_rs1_data_final = (EX_rs1_fwd) ? EX_rs1_fwd_data : EX.rs1_data;
