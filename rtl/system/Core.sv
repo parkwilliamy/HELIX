@@ -200,8 +200,6 @@ module Core (
     assign BTBwrite = ID_Jump || ID_Branch;
 
     CSRControl INST6 (
-        .clk(clk),
-        .rst_n(rst_n),
         .CSR(ID_CSR),
         .WB_csr_write(WB.csr_write),
         .ID_funct3(ID_funct3),
@@ -213,10 +211,6 @@ module Core (
         .WB_rs1(WB.rs1),
         .WB_rs1_data(WB.rs1_data),
         .WB_csr_value(WB.csr_value),
-        .mcycle(mcycle),
-        .minstret(minstret),
-        .correct_predictions(correct_predictions),
-        .total_predictions(total_predictions),
         .ID_csr_write(ID_csr_write),
         .csr_value(ID_csr_value),
         .WB_csr_write_data(WB_csr_write_data)
@@ -386,17 +380,12 @@ module Core (
         if (!rst_n) begin
 
             IF_pc <= 32'b0;
-            mcycle <= 0;
-            minstret <= 0;
-            correct_predictions <= 0;
-            total_predictions <= 0;
 
         end
 
         else begin
 
             if (!ID_Stall) IF_pc <= next_pc;
-            mcycle <= mcycle + 1;
 
         end
 
@@ -453,31 +442,31 @@ module Core (
             EX_n = '0;
         else
             EX_n = '{
-                pc_4:              ID_pc_4,
-                pc_imm:            ID_pc_imm,
-                BHTaddr:           ID_BHTaddr,
-                funct3:            ID_funct3,
-                field:             ID_field,
-                ValidReg:          ID_ValidReg,
-                ALUOp:             ID_ALUOp,
-                RegSrc:            ID_RegSrc,
-                ALUSrc:            ID_ALUSrc,
-                RegWrite:          ID_RegWrite,
-                MemRead:           ID_MemRead,
-                MemWrite:          ID_MemWrite,
-                Branch:            ID_Branch,
+                pc_4: ID_pc_4,
+                pc_imm: ID_pc_imm,
+                BHTaddr: ID_BHTaddr,
+                funct3: ID_funct3,
+                field: ID_field,
+                ValidReg: ID_ValidReg,
+                ALUOp: ID_ALUOp,
+                RegSrc: ID_RegSrc,
+                ALUSrc: ID_ALUSrc,
+                RegWrite: ID_RegWrite,
+                MemRead: ID_MemRead,
+                MemWrite: ID_MemWrite,
+                Branch: ID_Branch,
                 branch_prediction: ID_branch_prediction,
-                Jump:              ID_Jump,
-                rs1_data:          ID_rs1_data,
-                rs2_data:          ID_rs2_data,
-                imm:               ID_imm,
-                rd:                ID_rd,
-                rs1:               ID_rs1,
-                rs2:               ID_rs2,
-                csr_addr:          ID_csr_addr,
-                csr_write:         ID_csr_write,
-                csr_value:         ID_csr_value,
-                CSR:               ID_CSR
+                Jump: ID_Jump,
+                rs1_data: ID_rs1_data,
+                rs2_data: ID_rs2_data,
+                imm: ID_imm,
+                rd: ID_rd,
+                rs1: ID_rs1,
+                rs2: ID_rs2,
+                csr_addr:  ID_csr_addr,
+                csr_write: ID_csr_write,
+                csr_value: ID_csr_value,
+                CSR:ID_CSR
             };
 
     end
@@ -498,7 +487,6 @@ module Core (
 
         end else if (EX.Branch) begin
 
-            total_predictions <= total_predictions + 1;
             gh <= {gh[ghsize-2:0], EX_branch_taken};
 
             case (EX_prediction_status)
@@ -507,11 +495,9 @@ module Core (
                 1: BHT[EX.BHTaddr] <= BHT[EX.BHTaddr] - 1;
                 2: begin
                     if (BHT[EX.BHTaddr] > 0) BHT[EX.BHTaddr] <= BHT[EX.BHTaddr] - 1;
-                    correct_predictions <= correct_predictions + 1;
                 end
                 3: begin
                     if (BHT[EX.BHTaddr] < 3 && EX.branch_prediction > 1) BHT[EX.BHTaddr] <= BHT[EX.BHTaddr] + 1;
-                    correct_predictions <= correct_predictions + 1;
                 end
 
             endcase
@@ -528,23 +514,23 @@ module Core (
             MEM <= '0;
         else
             MEM <= '{
-                pc_4:       EX.pc_4,
-                pc_imm:     EX.pc_imm,
-                funct3:     EX.funct3,
-                ValidReg:   EX.ValidReg,
-                RegSrc:     EX.RegSrc,
-                RegWrite:   EX.RegWrite,
-                MemRead:    EX.MemRead,
-                MemWrite:   EX.MemWrite,
+                pc_4: EX.pc_4,
+                pc_imm: EX.pc_imm,
+                funct3: EX.funct3,
+                ValidReg: EX.ValidReg,
+                RegSrc: EX.RegSrc,
+                RegWrite: EX.RegWrite,
+                MemRead: EX.MemRead,
+                MemWrite: EX.MemWrite,
                 ALU_result: EX_ALU_result,
-                rs1:        EX.rs1,
-                rs2_data:   EX_rs2_data_final,
-                rs2:        EX.rs2,
-                rd:         EX.rd,
-                csr_addr:   EX.csr_addr,
-                csr_write:  EX.csr_write,
-                csr_value:  EX.csr_value,
-                rs1_data:   EX_rs1_data_final
+                rs1: EX.rs1,
+                rs2_data: EX_rs2_data_final,
+                rs2: EX.rs2,
+                rd: EX.rd,
+                csr_addr: EX.csr_addr,
+                csr_write: EX.csr_write,
+                csr_value: EX.csr_value,
+                rs1_data: EX_rs1_data_final
             };
 
     end
@@ -559,25 +545,54 @@ module Core (
 
         end else begin
 
-            if (WB.ValidReg != 3'b000) minstret <= minstret+1;
-
             WB <= '{
-                pc_4:       MEM.pc_4,
-                pc_imm:     MEM.pc_imm,
-                funct3:     MEM.funct3,
-                ValidReg:   MEM.ValidReg,
-                RegSrc:     MEM.RegSrc,
-                MemRead:    MEM.MemRead,
-                RegWrite:   MEM.RegWrite,
+                pc_4: MEM.pc_4,
+                pc_imm: MEM.pc_imm,
+                funct3: MEM.funct3,
+                ValidReg: MEM.ValidReg,
+                RegSrc: MEM.RegSrc,
+                MemRead: MEM.MemRead,
+                RegWrite: MEM.RegWrite,
                 ALU_result: MEM.ALU_result,
-                rs1:        MEM.rs1,
-                rd:         MEM.rd,
-                csr_addr:   MEM.csr_addr,
-                csr_write:  MEM.csr_write,
-                csr_value:  MEM_csr_value_final,
-                rs1_data:   MEM.rs1_data
+                rs1: MEM.rs1,
+                rd: MEM.rd,
+                csr_addr: MEM.csr_addr,
+                csr_write: MEM.csr_write,
+                csr_value: MEM_csr_value_final,
+                rs1_data: MEM.rs1_data
             };
 
+        end
+
+    end
+
+    // CSR registers 
+
+    always_ff @ (posedge clk) begin
+
+        if (!rst_n) begin
+
+            mcycle <= 0;
+            minstret <= 0;
+            correct_predictions <= 0;
+            total_predictions <= 0;
+
+        end else begin
+
+            // Default counting behavior
+            mcycle <= mcycle + 1;
+
+            if (WB.ValidReg != 3'b000) minstret <= minstret + 1;
+
+            if (EX.Branch) begin
+                total_predictions <= total_predictions + 1;
+                // prediction_status 2 and 3 indicate a correct prediction
+                if (EX_prediction_status == 2 || EX_prediction_status == 3)
+                    correct_predictions <= correct_predictions + 1;
+            end
+
+            // CSR writes in WB override the default counting (later
+            // non-blocking assignment to the same target wins).
             if (WB.csr_write) begin
 
                 case (WB.csr_addr)
