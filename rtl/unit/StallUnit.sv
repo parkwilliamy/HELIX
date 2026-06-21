@@ -9,21 +9,20 @@ module StallUnit (
 
     always_comb begin
 
-        // Load-Use Stall
+        // Load-use / CSR-use hazard: a load or CSR read in EX produces its
+        // result too late to feed an instruction entering EX next cycle.
 
-        if (EX_MemRead && !ID_MemWrite) begin
+        Stall = 1'b0;
 
-            Stall = (EX_rd != 0) && (((EX_rd == ID_rs1) && ID_rs1_valid)) || ((EX_rd == ID_rs2) && ID_rd_valid); // Detect a load-use hazard
+        if ((EX_MemRead || EX_CSR) && (EX_rd != 0)) begin
+
+            // rs1 stall logic
+            if ((EX_rd == ID_rs1) && ID_rs1_valid) Stall = 1'b1;
+
+            // rs2 stall logic, don't stall for load-store case if store uses load's result as data
+            if (!ID_MemWrite && (EX_rd == ID_rs2) && ID_rd_valid) Stall = 1'b1;
 
         end
-
-        else if (EX_CSR && !ID_MemWrite) begin
-
-            Stall = (EX_rd != 0) && (((EX_rd == ID_rs1) && ID_rs1_valid)) || ((EX_rd == ID_rs2) && ID_rd_valid); // CSR RAW hazard
-
-        end
-
-        else Stall = 0;
 
     end
 

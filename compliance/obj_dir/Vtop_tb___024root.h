@@ -20,8 +20,6 @@ class alignas(VL_CACHE_LINE_BYTES) Vtop_tb___024root final : public VerilatedMod
         VL_IN8(rst_n,0,0);
         CData/*3:0*/ top_tb__DOT__wea;
         CData/*3:0*/ top_tb__DOT__web;
-        CData/*7:0*/ top_tb__DOT__INST1__DOT____Vlvbound_h67f57f0a__0;
-        CData/*7:0*/ top_tb__DOT__INST1__DOT____Vlvbound_hfa028462__0;
         CData/*0:0*/ top_tb__DOT__INST2__DOT__BTBwrite;
         CData/*7:0*/ top_tb__DOT__INST2__DOT__IF_BHTaddr;
         CData/*1:0*/ top_tb__DOT__INST2__DOT__IF_branch_prediction;
@@ -40,12 +38,12 @@ class alignas(VL_CACHE_LINE_BYTES) Vtop_tb___024root final : public VerilatedMod
         CData/*0:0*/ top_tb__DOT__INST2__DOT__INST8__DOT__branch_taken_inter;
         CData/*0:0*/ __VstlFirstIteration;
         CData/*0:0*/ __Vtrigprevexpr___TOP__clk__0;
+        SData/*12:0*/ top_tb__DOT____Vcellinp__INST1__addra;
         SData/*11:0*/ top_tb__DOT__INST2__DOT__INST4__DOT__intimm1;
         IData/*31:0*/ top_tb__DOT__doa;
         IData/*31:0*/ top_tb__DOT__dob;
         IData/*31:0*/ top_tb__DOT__dia;
         IData/*31:0*/ top_tb__DOT__dib;
-        IData/*19:0*/ top_tb__DOT____Vcellinp__INST1__addra;
         VlWide<250>/*7999:0*/ top_tb__DOT__program_file;
         IData/*31:0*/ top_tb__DOT__RVMODEL_DATA_BEGIN;
         IData/*31:0*/ top_tb__DOT__RVMODEL_DATA_END;
@@ -75,15 +73,15 @@ class alignas(VL_CACHE_LINE_BYTES) Vtop_tb___024root final : public VerilatedMod
         VlWide<8>/*231:0*/ top_tb__DOT__INST2__DOT__MEM;
         VlWide<7>/*193:0*/ top_tb__DOT__INST2__DOT__WB;
         QData/*63:0*/ top_tb__DOT__INST2__DOT__mcycle;
-        VlUnpacked<IData/*31:0*/, 606208> top_tb__DOT__INST1__DOT__mem;
+        VlUnpacked<IData/*31:0*/, 8192> top_tb__DOT__INST1__DOT__mem;
         VlUnpacked<CData/*1:0*/, 256> top_tb__DOT__INST2__DOT__BHT;
         VlUnpacked<VlUnpacked<QData/*60:0*/, 2>, 16> top_tb__DOT__INST2__DOT__INST1__DOT__branch_target_buffer;
         VlUnpacked<QData/*60:0*/, 2> top_tb__DOT__INST2__DOT__INST1__DOT__IF_lines;
         VlUnpacked<QData/*60:0*/, 2> top_tb__DOT__INST2__DOT__INST1__DOT__ID_lines;
-    };
-    struct {
         VlUnpacked<IData/*31:0*/, 32> top_tb__DOT__INST2__DOT__INST3__DOT__reg_file;
         VlUnpacked<QData/*63:0*/, 1> __VstlTriggered;
+    };
+    struct {
         VlUnpacked<QData/*63:0*/, 1> __VactTriggered;
         VlUnpacked<QData/*63:0*/, 1> __VnbaTriggered;
     };

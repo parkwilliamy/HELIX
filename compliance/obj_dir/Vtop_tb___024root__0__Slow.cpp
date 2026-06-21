@@ -34,7 +34,7 @@ VL_ATTR_COLD void Vtop_tb___024root___eval_initial__TOP(Vtop_tb___024root* vlSel
     }
     VL_WRITEF_NX("Loading program from %s\n",0,8000,
                  vlSelfRef.top_tb__DOT__program_file.data());
-    VL_READMEM_N(true, 32, 606208, 0, VL_CVT_PACK_STR_NW(250, vlSelfRef.top_tb__DOT__program_file)
+    VL_READMEM_N(true, 32, 8192, 0, VL_CVT_PACK_STR_NW(250, vlSelfRef.top_tb__DOT__program_file)
                  ,  &(vlSelfRef.top_tb__DOT__INST1__DOT__mem)
                  , 0U, ~0ULL);
     if (VL_UNLIKELY(((! VL_VALUEPLUSARGS_INI(32, "begin_signature=%h"s, 
@@ -234,8 +234,6 @@ VL_ATTR_COLD void Vtop_tb___024root___stl_sequent__TOP__0(Vtop_tb___024root* vlS
     __Vtableidx1 = 0;
     CData/*6:0*/ __Vtableidx2;
     __Vtableidx2 = 0;
-    CData/*0:0*/ __VdfgRegularize_h6e95ff9d_0_2;
-    __VdfgRegularize_h6e95ff9d_0_2 = 0;
     VlWide<3>/*95:0*/ __Vtemp_4;
     VlWide<8>/*255:0*/ __Vtemp_5;
     // Body
@@ -873,27 +871,31 @@ VL_ATTR_COLD void Vtop_tb___024root___stl_sequent__TOP__0(Vtop_tb___024root* vlS
                               >> 3U)) | (IData)(top_tb__DOT__INST2__DOT__ID_ALUOp)));
     top_tb__DOT__INST2__DOT__ID_field = Vtop_tb__ConstPool__TABLE_hdb653689_0
         [__Vtableidx2];
+    vlSelfRef.top_tb__DOT__INST2__DOT__ID_Stall = 0U;
+    if ((((vlSelfRef.top_tb__DOT__INST2__DOT__EX[0U] 
+           >> 5U) | vlSelfRef.top_tb__DOT__INST2__DOT__EX[0U]) 
+         & (0U != (0x0000001fU & (vlSelfRef.top_tb__DOT__INST2__DOT__EX[1U] 
+                                  >> 6U))))) {
+        if ((((0x0000001fU & (vlSelfRef.top_tb__DOT__INST2__DOT__EX[1U] 
+                              >> 6U)) == (0x0000001fU 
+                                          & (top_tb__DOT__INST2__DOT__ID_instruction 
+                                             >> 0x0000000fU))) 
+             & ((IData)(top_tb__DOT__INST2__DOT__ID_ValidReg) 
+                >> 1U))) {
+            vlSelfRef.top_tb__DOT__INST2__DOT__ID_Stall = 1U;
+        }
+        if ((((~ (IData)(top_tb__DOT__INST2__DOT__ID_MemWrite)) 
+              & ((0x0000001fU & (vlSelfRef.top_tb__DOT__INST2__DOT__EX[1U] 
+                                 >> 6U)) == (0x0000001fU 
+                                             & (top_tb__DOT__INST2__DOT__ID_instruction 
+                                                >> 0x00000014U)))) 
+             & ((IData)(top_tb__DOT__INST2__DOT__ID_ValidReg) 
+                >> 2U))) {
+            vlSelfRef.top_tb__DOT__INST2__DOT__ID_Stall = 1U;
+        }
+    }
     vlSelfRef.top_tb__DOT__INST2__DOT__BTBwrite = ((IData)(vlSelfRef.top_tb__DOT__INST2__DOT__ID_Branch) 
                                                    | (IData)(top_tb__DOT__INST2__DOT__ID_Jump));
-    __VdfgRegularize_h6e95ff9d_0_2 = (((0U != (0x0000001fU 
-                                               & (vlSelfRef.top_tb__DOT__INST2__DOT__EX[1U] 
-                                                  >> 6U))) 
-                                       & (((0x0000001fU 
-                                            & (vlSelfRef.top_tb__DOT__INST2__DOT__EX[1U] 
-                                               >> 6U)) 
-                                           == (0x0000001fU 
-                                               & (top_tb__DOT__INST2__DOT__ID_instruction 
-                                                  >> 0x0000000fU))) 
-                                          & ((IData)(top_tb__DOT__INST2__DOT__ID_ValidReg) 
-                                             >> 1U))) 
-                                      | (((0x0000001fU 
-                                           & (vlSelfRef.top_tb__DOT__INST2__DOT__EX[1U] 
-                                              >> 6U)) 
-                                          == (0x0000001fU 
-                                              & (top_tb__DOT__INST2__DOT__ID_instruction 
-                                                 >> 0x00000014U))) 
-                                         & ((IData)(top_tb__DOT__INST2__DOT__ID_ValidReg) 
-                                            >> 2U)));
     if ((1U & vlSelfRef.top_tb__DOT__INST2__DOT__WB[0U])) {
         vlSelfRef.top_tb__DOT__INST2__DOT__WB_csr_write_data 
             = ((0x00000800U & vlSelfRef.top_tb__DOT__INST2__DOT__WB[0U])
@@ -1085,6 +1087,11 @@ VL_ATTR_COLD void Vtop_tb___024root___stl_sequent__TOP__0(Vtop_tb___024root* vlS
             : ((vlSelfRef.top_tb__DOT__INST2__DOT__EX[4U] 
                 << 3U) | (vlSelfRef.top_tb__DOT__INST2__DOT__EX[3U] 
                           >> 0x0000001dU)));
+    vlSelfRef.top_tb__DOT____Vcellinp__INST1__addra 
+        = (0x00001fffU & (((IData)(vlSelfRef.top_tb__DOT__INST2__DOT__ID_Stall)
+                            ? vlSelfRef.top_tb__DOT__INST2__DOT__ID_pc
+                            : vlSelfRef.top_tb__DOT__INST2__DOT__IF_pc) 
+                          >> 2U));
     top_tb__DOT__INST2__DOT__INST1__DOT__way_found = 0U;
     vlSelfRef.top_tb__DOT__INST2__DOT__INST1__DOT__victim_idx = 0U;
     if (vlSelfRef.top_tb__DOT__INST2__DOT__BTBwrite) {
@@ -1111,16 +1118,6 @@ VL_ATTR_COLD void Vtop_tb___024root___stl_sequent__TOP__0(Vtop_tb___024root* vlS
             __Vlabel0: ;
         }
     }
-    vlSelfRef.top_tb__DOT__INST2__DOT__ID_Stall = (
-                                                   (1U 
-                                                    & ((~ (IData)(top_tb__DOT__INST2__DOT__ID_MemWrite)) 
-                                                       & (vlSelfRef.top_tb__DOT__INST2__DOT__EX[0U] 
-                                                          >> 5U)))
-                                                    ? (IData)(__VdfgRegularize_h6e95ff9d_0_2)
-                                                    : 
-                                                   (vlSelfRef.top_tb__DOT__INST2__DOT__EX[0U] 
-                                                    & ((~ (IData)(top_tb__DOT__INST2__DOT__ID_MemWrite)) 
-                                                       & (IData)(__VdfgRegularize_h6e95ff9d_0_2))));
     vlSelfRef.top_tb__DOT__INST2__DOT__MEM_csr_value_final 
         = (((0x00000fffU & (vlSelfRef.top_tb__DOT__INST2__DOT__MEM[0U] 
                             >> 0x0000000dU)) == (0x00000fffU 
@@ -1150,11 +1147,6 @@ VL_ATTR_COLD void Vtop_tb___024root___stl_sequent__TOP__0(Vtop_tb___024root* vlS
                                                 << 3U) 
                                                | (vlSelfRef.top_tb__DOT__INST2__DOT__EX[1U] 
                                                   >> 0x0000001dU))));
-    vlSelfRef.top_tb__DOT____Vcellinp__INST1__addra 
-        = (0x000fffffU & (((IData)(vlSelfRef.top_tb__DOT__INST2__DOT__ID_Stall)
-                            ? vlSelfRef.top_tb__DOT__INST2__DOT__ID_pc
-                            : vlSelfRef.top_tb__DOT__INST2__DOT__IF_pc) 
-                          >> 2U));
     top_tb__DOT__INST2__DOT__EX_carry = 0U;
     if ((0x02000000U & vlSelfRef.top_tb__DOT__INST2__DOT__EX[0U])) {
         if ((1U & (~ (vlSelfRef.top_tb__DOT__INST2__DOT__EX[0U] 
@@ -1613,18 +1605,16 @@ VL_ATTR_COLD void Vtop_tb___024root___ctor_var_reset(Vtop_tb___024root* vlSelf) 
     vlSelf->top_tb__DOT__dob = VL_SCOPED_RAND_RESET_I(32, __VscopeHash, 2006643162704700292ull);
     vlSelf->top_tb__DOT__dia = VL_SCOPED_RAND_RESET_I(32, __VscopeHash, 12922144221055099401ull);
     vlSelf->top_tb__DOT__dib = VL_SCOPED_RAND_RESET_I(32, __VscopeHash, 1547587149590142414ull);
-    vlSelf->top_tb__DOT____Vcellinp__INST1__addra = VL_SCOPED_RAND_RESET_I(20, __VscopeHash, 12466527335744865955ull);
+    vlSelf->top_tb__DOT____Vcellinp__INST1__addra = VL_SCOPED_RAND_RESET_I(13, __VscopeHash, 12466527335744865955ull);
     VL_SCOPED_RAND_RESET_W(8000, vlSelf->top_tb__DOT__program_file, __VscopeHash, 1101078386483316854ull);
     vlSelf->top_tb__DOT__RVMODEL_DATA_BEGIN = VL_SCOPED_RAND_RESET_I(32, __VscopeHash, 2635610246748856821ull);
     vlSelf->top_tb__DOT__RVMODEL_DATA_END = VL_SCOPED_RAND_RESET_I(32, __VscopeHash, 9466641019508248057ull);
     vlSelf->top_tb__DOT__tohost = VL_SCOPED_RAND_RESET_I(32, __VscopeHash, 1030470667926345800ull);
     vlSelf->top_tb__DOT__i = VL_SCOPED_RAND_RESET_I(32, __VscopeHash, 6651770975129235105ull);
     vlSelf->top_tb__DOT__fd = 0;
-    for (int __Vi0 = 0; __Vi0 < 606208; ++__Vi0) {
+    for (int __Vi0 = 0; __Vi0 < 8192; ++__Vi0) {
         vlSelf->top_tb__DOT__INST1__DOT__mem[__Vi0] = VL_SCOPED_RAND_RESET_I(32, __VscopeHash, 5830564721699294562ull);
     }
-    vlSelf->top_tb__DOT__INST1__DOT____Vlvbound_h67f57f0a__0 = VL_SCOPED_RAND_RESET_I(8, __VscopeHash, 14005672768346208907ull);
-    vlSelf->top_tb__DOT__INST1__DOT____Vlvbound_hfa028462__0 = VL_SCOPED_RAND_RESET_I(8, __VscopeHash, 15970971304031839011ull);
     vlSelf->top_tb__DOT__INST2__DOT__IF_pc = VL_SCOPED_RAND_RESET_I(32, __VscopeHash, 14635124202959967813ull);
     vlSelf->top_tb__DOT__INST2__DOT__next_pc = VL_SCOPED_RAND_RESET_I(32, __VscopeHash, 5113717840451670525ull);
     vlSelf->top_tb__DOT__INST2__DOT__BTBwrite = VL_SCOPED_RAND_RESET_I(1, __VscopeHash, 7633578093561993661ull);
