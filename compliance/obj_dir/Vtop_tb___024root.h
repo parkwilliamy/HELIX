@@ -54,6 +54,7 @@ class alignas(VL_CACHE_LINE_BYTES) Vtop_tb___024root final : public VerilatedMod
         CData/*0:0*/ top_tb__DOT__INST2__DOT__EX_Branch;
         CData/*0:0*/ top_tb__DOT__INST2__DOT__EX_Jump;
         CData/*0:0*/ top_tb__DOT__INST2__DOT__EX_csr_write;
+        CData/*0:0*/ top_tb__DOT__INST2__DOT__EX_CSR;
         CData/*4:0*/ top_tb__DOT__INST2__DOT__EX_rs1;
         CData/*4:0*/ top_tb__DOT__INST2__DOT__EX_rs2;
         CData/*4:0*/ top_tb__DOT__INST2__DOT__EX_rd;
@@ -79,9 +80,9 @@ class alignas(VL_CACHE_LINE_BYTES) Vtop_tb___024root final : public VerilatedMod
         CData/*4:0*/ top_tb__DOT__INST2__DOT__WB_rs1;
         CData/*4:0*/ top_tb__DOT__INST2__DOT__WB_rd;
         CData/*7:0*/ top_tb__DOT__INST2__DOT__gh;
-        CData/*0:0*/ top_tb__DOT__INST2__DOT__ID_PostFlush;
     };
     struct {
+        CData/*0:0*/ top_tb__DOT__INST2__DOT__ID_PostFlush;
         CData/*1:0*/ top_tb__DOT__INST2__DOT__INST1__DOT__IF_lines_hit;
         CData/*1:0*/ top_tb__DOT__INST2__DOT__INST1__DOT__ID_lines_valid;
         CData/*0:0*/ top_tb__DOT__INST2__DOT__INST1__DOT__victim_idx;
@@ -145,9 +146,9 @@ class alignas(VL_CACHE_LINE_BYTES) Vtop_tb___024root final : public VerilatedMod
         VlUnpacked<CData/*1:0*/, 256> top_tb__DOT__INST2__DOT__BHT;
         VlUnpacked<VlUnpacked<QData/*60:0*/, 2>, 16> top_tb__DOT__INST2__DOT__INST1__DOT__branch_target_buffer;
         VlUnpacked<QData/*60:0*/, 2> top_tb__DOT__INST2__DOT__INST1__DOT__IF_lines;
-        VlUnpacked<QData/*60:0*/, 2> top_tb__DOT__INST2__DOT__INST1__DOT__ID_lines;
     };
     struct {
+        VlUnpacked<QData/*60:0*/, 2> top_tb__DOT__INST2__DOT__INST1__DOT__ID_lines;
         VlUnpacked<IData/*31:0*/, 32> top_tb__DOT__INST2__DOT__INST3__DOT__reg_file;
         VlUnpacked<QData/*63:0*/, 1> __VstlTriggered;
         VlUnpacked<QData/*63:0*/, 1> __VactTriggered;

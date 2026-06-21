@@ -52,7 +52,7 @@ module Core (
     logic [3:0] EX_field;
     logic [2:0] EX_ValidReg, EX_funct3, EX_RegSrc;
     logic [1:0] EX_ALUOp, EX_branch_prediction, EX_ALUSrc;
-    logic EX_RegWrite, EX_MemRead, EX_MemWrite, EX_Branch, EX_Jump, EX_csr_write, EX_csr_fwd;
+    logic EX_RegWrite, EX_MemRead, EX_MemWrite, EX_Branch, EX_Jump, EX_csr_write, EX_csr_fwd, EX_CSR;
     logic [XLEN-1:0] EX_pc_4, EX_rs1_data, EX_rs2_data, EX_imm, EX_pc_imm, EX_csr_value;
     logic [4:0] EX_rs1, EX_rs2, EX_rd;
     logic [7:0] EX_BHTaddr;
@@ -353,6 +353,7 @@ module Core (
     StallUnit INST13 (
         .EX_MemRead(EX_MemRead),
         .ID_MemWrite(ID_MemWrite),
+        .EX_CSR(EX_CSR),
         .EX_rd(EX_rd),
         .ID_rs1(ID_rs1),
         .ID_rs2(ID_rs2),
@@ -463,6 +464,7 @@ module Core (
             EX_csr_addr <= 12'b0;
             EX_csr_write <= 1'b0;
             EX_csr_value <= 32'b0;
+            EX_CSR <= 0;
             
             for (int i = 0; i < 256; i = i+1) begin
 
@@ -500,6 +502,7 @@ module Core (
                 EX_csr_addr <= 12'b0;
                 EX_csr_write <= 1'b0;
                 EX_csr_value <= 32'b0;
+                EX_CSR <= 1'b0;
             
             end
            
@@ -518,6 +521,7 @@ module Core (
                 EX_branch_prediction <= 2'b0;
                 EX_Jump <= 1'b0;
                 EX_csr_write <= 1'b0;
+                EX_CSR <= 1'b0;
    
             end
             
@@ -547,6 +551,7 @@ module Core (
                 EX_csr_addr <= ID_csr_addr;
                 EX_csr_write <= ID_csr_write;
                 EX_csr_value <= ID_csr_value;
+                EX_CSR <= ID_CSR;
             
             end
             
