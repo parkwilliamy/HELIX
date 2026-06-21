@@ -31,10 +31,10 @@ static inline unsigned long read_total_predictions(void) {
 
 int main() {
 
-    volatile int* CLK_CYCLE_ADDR = (volatile int*)0x00007900;
-    volatile int* RETIRED_INSTRUCTIONS_ADDR = (volatile int*)0x00007904;
-    volatile int* CORRECT_PREDICTIONS_ADDR = (volatile int*)0x00007908;
-    volatile int* TOTAL_PREDICTIONS_ADDR = (volatile int*)0x0000790C;
+    volatile int* CLK_CYCLE_ADDR = (volatile int*)0x00005000;
+    volatile int* RETIRED_INSTRUCTIONS_ADDR = (volatile int*)0x00005004;
+    volatile int* CORRECT_PREDICTIONS_ADDR = (volatile int*)0x00005008;
+    volatile int* TOTAL_PREDICTIONS_ADDR = (volatile int*)0x0000500C;
 
     unsigned long start = read_mcycle();
     int x = fib(15);
