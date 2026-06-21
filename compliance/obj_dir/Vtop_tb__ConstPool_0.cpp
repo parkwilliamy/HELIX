@@ -4,6 +4,16 @@
 
 #include "verilated.h"
 
+extern const VlWide<8>/*255:0*/ Vtop_tb__ConstPool__CONST_h988f8c19_0 = VlWide<8>{{
+        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+        0x00000000, 0x00000000, 0x00000000, 0x00000000
+}};
+
+extern const VlWide<8>/*255:0*/ Vtop_tb__ConstPool__CONST_hedc19b44_0 = VlWide<8>{{
+        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+        0x00000000, 0x00000000, 0x00000000, 0x00000000
+}};
+
 extern const VlUnpacked<CData/*0:0*/, 128> Vtop_tb__ConstPool__TABLE_h07b8af5e_0 = {{
     0U, 0U, 0U, 1U, 0U, 0U, 0U, 0U,
     0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U,

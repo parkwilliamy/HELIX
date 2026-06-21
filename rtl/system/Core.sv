@@ -7,80 +7,94 @@ import mem_constants::*;
 module Core (
     input logic rst_n, clk,
     input logic [XLEN-1:0] doa, dob,
-    output logic [ADDR_WIDTH-1:0] addra, addrb, 
-    output logic [3:0] web, 
-    output logic [XLEN-1:0] dib 
+    output logic [ADDR_WIDTH-1:0] addra, addrb,
+    output logic [3:0] web,
+    output logic [XLEN-1:0] dib
 );
 
     // NAMING CONVENTIONS
 
     // Pipeline Stages: IF (Instruction Fetch), ID (Instruction Decode), EX (Execute), MEM (Memory Writeback), WB (Register File Writeback)
     // Generally most registers are written as {PIPELINE STAGE}_{SIGNAL}
+    //
+    // Pipeline-register convention:
+    // Stages with many latched signals (EX/MEM/WB) bundle them into a packed
+    // "*_reg_t" struct, driven ONLY in that stage's always_ff block.
+    // IF/ID have only 1 / 5 latched signals, so they stay flat entirely.
 
     // ************************************************************************************************ PIPELINE REGISTERS ************************************************************************************************************************************
 
-    // IF
+    // IF -- only IF_pc is a register; the rest are combinational (BTB / Fetch / gshare outputs)
 
     logic [XLEN-1:0] IF_pc;
-    logic [XLEN-1:0] next_pc;
-    logic [XLEN-1:0] IF_pc_4, IF_pc_imm;
+    logic [XLEN-1:0] next_pc, IF_pc_4, IF_pc_imm;
     logic IF_Branch, IF_Jump, BTBwrite, IF_BTBhit;
     logic [7:0] IF_BHTaddr;
     logic [1:0] IF_branch_prediction;
 
-    // ID
+    // ID -- registers: pc, pc_4, BHTaddr, branch_prediction, BTBhit; the rest are combinational (decode / control / RegFile / ImmGen outputs)
 
     logic [XLEN-1:0] ID_pc, ID_pc_4;
     logic [7:0] ID_BHTaddr;
     logic [1:0] ID_branch_prediction;
     logic ID_BTBhit;
     logic [XLEN-1:0] ID_instruction, ID_imm, ID_rs1_data, ID_rs2_data, ID_pc_imm, ID_csr_value;
-    logic [6:0] ID_opcode;
-    logic [11:7] ID_rd;
-    logic [14:12] ID_funct3;
-    logic [19:15] ID_rs1;
-    logic [24:20] ID_rs2;
-    logic [XLEN-1:25] ID_funct7;
+    logic [6:0] ID_opcode, ID_funct7;
+    logic [4:0] ID_rd, ID_rs1, ID_rs2;
+    logic [2:0] ID_funct3, ID_ValidReg, ID_RegSrc;
     logic [11:0] ID_csr_addr;
-    logic ID_Stall, ID_Flush, ID_RegWrite, ID_MemRead, ID_MemWrite, ID_Valid, ID_Branch, ID_Jump, ID_CSR, ID_csr_write;
-    logic [2:0] ID_ValidReg, ID_RegSrc;
+    logic [3:0] ID_field;
     logic [1:0] ID_ALUOp, ID_ALUSrc;
-    logic [3:0] ID_field; 
-    
+    logic ID_Stall, ID_Flush, ID_RegWrite, ID_MemRead, ID_MemWrite, ID_Valid, ID_Branch, ID_Jump, ID_CSR, ID_csr_write;
+
     // EX
-    
-    logic [3:0] EX_field;
-    logic [2:0] EX_ValidReg, EX_funct3, EX_RegSrc;
-    logic [1:0] EX_ALUOp, EX_branch_prediction, EX_ALUSrc;
-    logic EX_RegWrite, EX_MemRead, EX_MemWrite, EX_Branch, EX_Jump, EX_csr_write, EX_csr_fwd, EX_CSR;
-    logic [XLEN-1:0] EX_pc_4, EX_rs1_data, EX_rs2_data, EX_imm, EX_pc_imm, EX_csr_value;
-    logic [4:0] EX_rs1, EX_rs2, EX_rd;
-    logic [7:0] EX_BHTaddr;
-    logic [11:0] EX_csr_addr;
-    logic EX_zero, EX_sign, EX_overflow, EX_carry, EX_Flush, EX_branch_taken, EX_rs1_fwd, EX_rs2_fwd;
-    logic [XLEN-1:0] EX_op1, EX_op2, EX_rs1_fwd_data, EX_rs2_fwd_data, EX_rs1_data_final, EX_rs2_data_final, EX_ALU_result;
+
+    // Registered EX payload: the signals latched ID -> EX (driven only in the
+    // EX pipeline-register block). Stage-local combinational / module-output
+    // signals are NOT registers, so they live outside the struct below.
+    typedef struct packed {
+        logic [XLEN-1:0] pc_4, pc_imm, rs1_data, rs2_data, imm, csr_value;
+        logic [7:0] BHTaddr;
+        logic [4:0] rs1, rs2, rd;
+        logic [11:0] csr_addr;
+        logic [3:0] field;
+        logic [2:0] funct3, ValidReg, RegSrc;
+        logic [1:0] ALUOp, ALUSrc, branch_prediction;
+        logic RegWrite, MemRead, MemWrite, Branch, Jump, csr_write, CSR;
+    } ex_reg_t;
+    ex_reg_t EX, EX_n;            // EX is the register; EX_n is its next-state (combinational)
+
+    logic [XLEN-1:0] EX_op1, EX_op2, EX_rs1_fwd_data, EX_rs2_fwd_data,
+                     EX_rs1_data_final, EX_rs2_data_final, EX_ALU_result;
     logic [1:0] EX_prediction_status;
+    logic EX_zero, EX_sign, EX_overflow, EX_carry, EX_Flush, EX_branch_taken,
+          EX_rs1_fwd, EX_rs2_fwd;
 
-    // MEM
+    // MEM -- registered payload; rs2/csr forwarding muxes are combinational
 
-    logic [XLEN-1:0] MEM_pc_4;
-    logic [2:0] MEM_funct3, MEM_ValidReg, MEM_RegSrc;
-    logic MEM_MemRead, MEM_MemWrite, MEM_RegWrite, MEM_csr_write, MEM_csr_fwd;
-    logic [XLEN-1:0] MEM_pc_imm, MEM_ALU_result, MEM_rs2_data, MEM_csr_value, MEM_rs1_data;
-    logic [4:0] MEM_rs1, MEM_rs2, MEM_rd;
-    logic [11:0] MEM_csr_addr;
+    typedef struct packed {
+        logic [XLEN-1:0] pc_4, pc_imm, ALU_result, rs2_data, csr_value, rs1_data;
+        logic [4:0]  rs1, rs2, rd;
+        logic [11:0] csr_addr;
+        logic [2:0]  funct3, ValidReg, RegSrc;
+        logic MemRead, MemWrite, RegWrite, csr_write;
+    } mem_reg_t;
+    mem_reg_t MEM;
+
     logic [XLEN-1:0] MEM_rs2_fwd_data, MEM_rs2_data_final, MEM_csr_value_final;
-    logic MEM_rs2_fwd;
+    logic MEM_rs2_fwd, MEM_csr_fwd;
 
-    // WB
+    // WB -- registered payload; rd_write_data / csr_write_data are combinational (WriteBack / CSRControl outputs)
 
-    logic [XLEN-1:0] WB_pc_imm, WB_pc_4, WB_ALU_result, WB_csr_value, WB_rs1_data;
-    logic [2:0] WB_funct3, WB_ValidReg, WB_RegSrc;
-    logic WB_MemRead;
-    logic WB_RegWrite;
-    logic WB_csr_write;
-    logic [4:0] WB_rs1, WB_rd;
-    logic [11:0] WB_csr_addr;
+    typedef struct packed {
+        logic [XLEN-1:0] pc_4, pc_imm, ALU_result, csr_value, rs1_data;
+        logic [4:0]  rs1, rd;
+        logic [11:0] csr_addr;
+        logic [2:0]  funct3, ValidReg, RegSrc;
+        logic MemRead, RegWrite, csr_write;
+    } wb_reg_t;
+    wb_reg_t WB;
+
     logic [XLEN-1:0] WB_rd_write_data, WB_csr_write_data;
 
 
@@ -94,7 +108,7 @@ module Core (
 
 
     // *************************************************************************************************************** MODULES ********************************************************************************************************************************
-               
+
     // =============================== INSTRUCTION FETCH ================================
 
     logic [1:0] BHT [BHTsize-1:0]; // Branch History Table stores predictions for up to 256 branch instructions
@@ -105,7 +119,7 @@ module Core (
     // 4) 11 - Strong Taken
 
     logic [ghsize-1:0] gh; // Global History shift register stores the last 8 predictions, with 0 indicating branch not taken and 1 indicating branch taken
-    
+
     assign IF_BHTaddr = IF_pc[2 +: ghsize] ^ gh; // gshare branch prediction indexing
     assign IF_branch_prediction = BHT[IF_BHTaddr];
 
@@ -114,10 +128,10 @@ module Core (
     // No penalty incurred on taken branches that already computed the target address previously (i.e., loops)
 
     BTB INST1 (
-        .clk(clk), 
+        .clk(clk),
         .rst_n(rst_n),
-        .write(BTBwrite), 
-        .ID_Branch(ID_Branch), 
+        .write(BTBwrite),
+        .ID_Branch(ID_Branch),
         .IF_pc(IF_pc[XLEN-1:2]),
         .ID_pc(ID_pc[XLEN-1:2]),
         .pc_imm_in(ID_pc_imm),
@@ -126,8 +140,8 @@ module Core (
         .IF_Branch(IF_Branch),
         .IF_Jump(IF_Jump)
     );
-    
-    
+
+
     // =============================== INSTRUCTION DECODE ===============================
 
     logic ID_PostFlush; // flag used to indicate if a pipeline flush occured last cycle
@@ -141,16 +155,16 @@ module Core (
     assign ID_funct7 = ID_instruction[XLEN-1:25];
     assign ID_csr_addr = ID_instruction[XLEN-1 -: 12];
     assign addra = ID_Stall ? ID_pc[ADDR_WIDTH-1:0] : IF_pc[ADDR_WIDTH-1:0]; // fetch instruction from ID_pc if pipeline is stalled
-    
+
     ControlUnit INST2 (
-        .opcode(ID_opcode), 
+        .opcode(ID_opcode),
         .ValidReg(ID_ValidReg),
-        .ALUOp(ID_ALUOp), 
-        .RegSrc(ID_RegSrc), 
-        .ALUSrc(ID_ALUSrc), 
-        .RegWrite(ID_RegWrite), 
-        .MemRead(ID_MemRead), 
-        .MemWrite(ID_MemWrite), 
+        .ALUOp(ID_ALUOp),
+        .RegSrc(ID_RegSrc),
+        .ALUSrc(ID_ALUSrc),
+        .RegWrite(ID_RegWrite),
+        .MemRead(ID_MemRead),
+        .MemWrite(ID_MemWrite),
         .Branch(ID_Branch),
         .Jump(ID_Jump),
         .Valid(ID_Valid),
@@ -158,47 +172,47 @@ module Core (
     );
 
     RegFile INST3 (
-        .clk(clk), 
+        .clk(clk),
         .rst_n(rst_n),
-        .RegWrite(WB_RegWrite), 
-        .rs1(ID_rs1), 
-        .rs2(ID_rs2), 
-        .rd(WB_rd), 
-        .rd_write_data(WB_rd_write_data), 
-        .rs1_data(ID_rs1_data), 
+        .RegWrite(WB.RegWrite),
+        .rs1(ID_rs1),
+        .rs2(ID_rs2),
+        .rd(WB.rd),
+        .rd_write_data(WB_rd_write_data),
+        .rs1_data(ID_rs1_data),
         .rs2_data(ID_rs2_data)
     );
 
     ImmGen INST4 (
-        .instruction(ID_instruction), 
+        .instruction(ID_instruction),
         .imm(ID_imm)
     );
 
     ALUControl INST5 (
-        .sub_bit(ID_funct7[30]), 
-        .funct3(ID_funct3), 
-        .ALUOp(ID_ALUOp), 
-        .regbit(ID_opcode[5]), 
+        .sub_bit(ID_funct7[5]),
+        .funct3(ID_funct3),
+        .ALUOp(ID_ALUOp),
+        .regbit(ID_opcode[5]),
         .field(ID_field)
     );
 
     assign ID_pc_imm = ID_pc + ID_imm;
-    assign BTBwrite = (ID_Jump || ID_Branch) ? 1 : 0;
-    
+    assign BTBwrite = ID_Jump || ID_Branch;
+
     CSRControl INST6 (
         .clk(clk),
         .rst_n(rst_n),
         .CSR(ID_CSR),
-        .WB_csr_write(WB_csr_write),
+        .WB_csr_write(WB.csr_write),
         .ID_funct3(ID_funct3),
-        .WB_funct3(WB_funct3),
+        .WB_funct3(WB.funct3),
         .ID_csr_addr(ID_csr_addr),
-        .WB_csr_addr(WB_csr_addr),
+        .WB_csr_addr(WB.csr_addr),
         .ID_rs1(ID_rs1),
         .ID_rd(ID_rd),
-        .WB_rs1(WB_rs1),
-        .WB_rs1_data(WB_rs1_data),
-        .WB_csr_value(WB_csr_value),
+        .WB_rs1(WB.rs1),
+        .WB_rs1_data(WB.rs1_data),
+        .WB_csr_value(WB.csr_value),
         .mcycle(mcycle),
         .minstret(minstret),
         .correct_predictions(correct_predictions),
@@ -207,49 +221,49 @@ module Core (
         .csr_value(ID_csr_value),
         .WB_csr_write_data(WB_csr_write_data)
     );
-    
+
 
     // ==================================== EXECUTE =====================================
 
-    assign EX_op1 = (EX_ALUOp == 1 && EX_ALUSrc == 1 && EX_RegSrc == 0 && EX_RegWrite == 1) ? 0 : EX_rs1_data_final;
-    assign EX_op2 = (EX_ALUSrc == 2'b00) ? EX_rs2_data_final : 
-                    (EX_ALUSrc == 2'b01) ? EX_imm : EX_csr_value;
+    assign EX_op1 = (EX.ALUOp == 1 && EX.ALUSrc == 1 && EX.RegSrc == 0 && EX.RegWrite == 1) ? 0 : EX_rs1_data_final;
+    assign EX_op2 = (EX.ALUSrc == 2'b00) ? EX_rs2_data_final :
+                    (EX.ALUSrc == 2'b01) ? EX.imm : EX.csr_value;
 
     ALU INST7 (
-        .op1(EX_op1), 
-        .op2(EX_op2), 
-        .field(EX_field), 
-        .ALU_result(EX_ALU_result), 
-        .zero(EX_zero), 
-        .sign(EX_sign), 
-        .overflow(EX_overflow), 
+        .op1(EX_op1),
+        .op2(EX_op2),
+        .field(EX.field),
+        .ALU_result(EX_ALU_result),
+        .zero(EX_zero),
+        .sign(EX_sign),
+        .overflow(EX_overflow),
         .carry(EX_carry)
     );
 
     // Branch Resolution Unit compares prediction with actual branch result, yielding a prediction status that indicates whether the prediction was correct or not
 
     BRU INST8 (
-        .EX_branch_prediction(EX_branch_prediction),
-        .EX_Branch(EX_Branch), 
-        .zero(EX_zero), 
-        .sign(EX_sign), 
-        .overflow(EX_overflow), 
+        .EX_branch_prediction(EX.branch_prediction),
+        .EX_Branch(EX.Branch),
+        .zero(EX_zero),
+        .sign(EX_sign),
+        .overflow(EX_overflow),
         .carry(EX_carry),
-        .funct3(EX_funct3),
+        .funct3(EX.funct3),
         .branch_taken(EX_branch_taken),
         .prediction_status(EX_prediction_status)
     );
 
 
     // ================================ MEMORY WRITEBACK ================================
-    
-    assign addrb = MEM_ALU_result[ADDR_WIDTH-1:0];
+
+    assign addrb = MEM.ALU_result[ADDR_WIDTH-1:0];
 
     Store INST9 (
-        .MemWrite(MEM_MemWrite),
-        .addrb(MEM_ALU_result),
+        .MemWrite(MEM.MemWrite),
+        .addrb(MEM.ALU_result),
         .rs2_data(MEM_rs2_data_final),
-        .funct3(MEM_funct3),
+        .funct3(MEM.funct3),
         .web(web),
         .dib(dib)
     );
@@ -258,12 +272,12 @@ module Core (
     // =============================== REGFILE WRITEBACK ===============================+
 
     WriteBack INST10 (
-        .ALU_result(WB_ALU_result), 
-        .pc_imm(WB_pc_imm), 
-        .pc_4(WB_pc_4),
-        .csr_value(WB_csr_value),
-        .funct3(WB_funct3),
-        .RegSrc(WB_RegSrc),
+        .ALU_result(WB.ALU_result),
+        .pc_imm(WB.pc_imm),
+        .pc_4(WB.pc_4),
+        .csr_value(WB.csr_value),
+        .funct3(WB.funct3),
+        .RegSrc(WB.RegSrc),
         .DMEM_word(dob),
         .rd_write_data(WB_rd_write_data)
     );
@@ -280,16 +294,16 @@ module Core (
         .IF_Branch(IF_Branch),
         .IF_Jump(IF_Jump),
         .ID_Branch(ID_Branch),
-        .EX_Branch(EX_Branch),
+        .EX_Branch(EX.Branch),
         .ID_Jump(ID_Jump),
-        .EX_Jump(EX_Jump),
+        .EX_Jump(EX.Jump),
         .ID_ALUSrc(ID_ALUSrc),
-        .EX_ALUSrc(EX_ALUSrc),
+        .EX_ALUSrc(EX.ALUSrc),
         .IF_pc(IF_pc),
         .IF_pc_imm(IF_pc_imm),
-        .EX_pc_4(EX_pc_4),
+        .EX_pc_4(EX.pc_4),
         .ID_pc_imm(ID_pc_imm),
-        .EX_pc_imm(EX_pc_imm),
+        .EX_pc_imm(EX.pc_imm),
         .rs1_imm(EX_ALU_result),
         .IF_pc_4(IF_pc_4),
         .next_pc(next_pc),
@@ -304,33 +318,33 @@ module Core (
     // 3 types of forwards:
     // 1) MEM -> EX
     // 2) WB -> EX
-    // 3) WB -> MEM 
+    // 3) WB -> MEM
 
     ForwardUnit INST12 (
-        .MEM_ALU_result(MEM_ALU_result),
-        .MEM_pc_4(MEM_pc_4),
-        .MEM_pc_imm(MEM_pc_imm),
-        .MEM_RegSrc(MEM_RegSrc),
-        .MEM_csr_value(MEM_csr_value),
+        .MEM_ALU_result(MEM.ALU_result),
+        .MEM_pc_4(MEM.pc_4),
+        .MEM_pc_imm(MEM.pc_imm),
+        .MEM_RegSrc(MEM.RegSrc),
+        .MEM_csr_value(MEM.csr_value),
         .WB_rd_write_data(WB_rd_write_data),
         .WB_csr_write_data(WB_csr_write_data),
-        .EX_rs1(EX_rs1), 
-        .EX_rs2(EX_rs2), 
-        .MEM_rs2(MEM_rs2),
-        .MEM_rd(MEM_rd), 
-        .WB_rd(WB_rd),
-        .EX_rs1_valid(EX_ValidReg[1]),
-        .EX_rd_valid(EX_ValidReg[2]),
-        .MEM_rs2_valid(MEM_ValidReg[0]),
-        .MEM_rd_valid(MEM_ValidReg[2]),
-        .WB_rs2_valid(WB_ValidReg[0]),
-        .MEM_MemRead(MEM_MemRead),
-        .MEM_MemWrite(MEM_MemWrite),
-        .WB_MemRead(WB_MemRead),
-        .WB_csr_write(WB_csr_write),
-        .MEM_csr_addr(MEM_csr_addr),
-        .WB_csr_addr(WB_csr_addr),
-        .EX_rs1_fwd(EX_rs1_fwd), 
+        .EX_rs1(EX.rs1),
+        .EX_rs2(EX.rs2),
+        .MEM_rs2(MEM.rs2),
+        .MEM_rd(MEM.rd),
+        .WB_rd(WB.rd),
+        .EX_rs1_valid(EX.ValidReg[1]),
+        .EX_rd_valid(EX.ValidReg[2]),
+        .MEM_rs2_valid(MEM.ValidReg[0]),
+        .MEM_rd_valid(MEM.ValidReg[2]),
+        .WB_rs2_valid(WB.ValidReg[0]),
+        .MEM_MemRead(MEM.MemRead),
+        .MEM_MemWrite(MEM.MemWrite),
+        .WB_MemRead(WB.MemRead),
+        .WB_csr_write(WB.csr_write),
+        .MEM_csr_addr(MEM.csr_addr),
+        .WB_csr_addr(WB.csr_addr),
+        .EX_rs1_fwd(EX_rs1_fwd),
         .EX_rs2_fwd(EX_rs2_fwd),
         .MEM_rs2_fwd(MEM_rs2_fwd),
         .EX_rs1_fwd_data(EX_rs1_fwd_data),
@@ -340,10 +354,10 @@ module Core (
         .MEM_csr_value_final(MEM_csr_value_final)
     );
 
-    assign EX_rs1_data_final = (EX_rs1_fwd) ? EX_rs1_fwd_data : EX_rs1_data;
-    assign EX_rs2_data_final = (EX_rs2_fwd) ? EX_rs2_fwd_data : EX_rs2_data;
-    assign MEM_rs2_data_final = (MEM_rs2_fwd) ? MEM_rs2_fwd_data : MEM_rs2_data;
-    assign MEM_csr_value_final = (MEM_csr_fwd) ? WB_csr_write_data : MEM_csr_value;
+    assign EX_rs1_data_final = (EX_rs1_fwd) ? EX_rs1_fwd_data : EX.rs1_data;
+    assign EX_rs2_data_final = (EX_rs2_fwd) ? EX_rs2_fwd_data : EX.rs2_data;
+    assign MEM_rs2_data_final = (MEM_rs2_fwd) ? MEM_rs2_fwd_data : MEM.rs2_data;
+    assign MEM_csr_value_final = (MEM_csr_fwd) ? WB_csr_write_data : MEM.csr_value;
 
 
     // =================================== STALLING =====================================
@@ -351,10 +365,10 @@ module Core (
     // Stall Unit freezes the pipeline for load-use hazards
 
     StallUnit INST13 (
-        .EX_MemRead(EX_MemRead),
+        .EX_MemRead(EX.MemRead),
         .ID_MemWrite(ID_MemWrite),
-        .EX_CSR(EX_CSR),
-        .EX_rd(EX_rd),
+        .EX_CSR(EX.CSR),
+        .EX_rd(EX.rd),
         .ID_rs1(ID_rs1),
         .ID_rs2(ID_rs2),
         .ID_rs1_valid(ID_ValidReg[1]),
@@ -364,14 +378,14 @@ module Core (
 
 
     // *********************************************************************************************************** SEQUENTIAL LOGIC ***************************************************************************************************************************
-    
+
     // IF
 
-    always @ (posedge clk) begin
+    always_ff @ (posedge clk) begin
 
         if (!rst_n) begin
 
-            IF_pc <= 32'b0; 
+            IF_pc <= 32'b0;
             mcycle <= 0;
             minstret <= 0;
             correct_predictions <= 0;
@@ -382,16 +396,16 @@ module Core (
         else begin
 
             if (!ID_Stall) IF_pc <= next_pc;
-            mcycle <= mcycle + 1; 
+            mcycle <= mcycle + 1;
 
         end
 
     end
-    
+
     // ID
-    
-    always @ (posedge clk) begin
-    
+
+    always_ff @ (posedge clk) begin
+
         if (!rst_n) begin
 
             ID_PostFlush <= 0;
@@ -400,289 +414,173 @@ module Core (
             ID_BHTaddr <= 8'b0;
             ID_branch_prediction <= 2'b0;
             ID_BTBhit <= 1'b0;
-        
+
         end else begin
-        
+
             ID_PostFlush <= 0;
-        
+
             if (ID_Flush) begin
-            
+
                 ID_pc <= 32'b0;
                 ID_pc_4 <= 32'b0;
                 ID_BHTaddr <= 8'b0;
                 ID_branch_prediction <= 2'b0;
                 ID_BTBhit <= 1'b0;
                 ID_PostFlush <= 1;
-            
+
             end
-             
+
             else if (!ID_Stall) begin
-            
+
                 ID_pc <= IF_pc;
                 ID_pc_4 <= IF_pc_4;
                 ID_BHTaddr <= IF_BHTaddr;
                 ID_branch_prediction <= IF_branch_prediction;
                 ID_BTBhit <= IF_BTBhit;
-            
+
             end
-        
+
         end
-    
+
     end
-    
+
     // EX
-    
-    always @ (posedge clk) begin
-    
+
+    always_comb begin
+
+        // Flush and a stall bubble both inject a NOP
+        if (EX_Flush || ID_Stall)
+            EX_n = '0;
+        else
+            EX_n = '{
+                pc_4:              ID_pc_4,
+                pc_imm:            ID_pc_imm,
+                BHTaddr:           ID_BHTaddr,
+                funct3:            ID_funct3,
+                field:             ID_field,
+                ValidReg:          ID_ValidReg,
+                ALUOp:             ID_ALUOp,
+                RegSrc:            ID_RegSrc,
+                ALUSrc:            ID_ALUSrc,
+                RegWrite:          ID_RegWrite,
+                MemRead:           ID_MemRead,
+                MemWrite:          ID_MemWrite,
+                Branch:            ID_Branch,
+                branch_prediction: ID_branch_prediction,
+                Jump:              ID_Jump,
+                rs1_data:          ID_rs1_data,
+                rs2_data:          ID_rs2_data,
+                imm:               ID_imm,
+                rd:                ID_rd,
+                rs1:               ID_rs1,
+                rs2:               ID_rs2,
+                csr_addr:          ID_csr_addr,
+                csr_write:         ID_csr_write,
+                csr_value:         ID_csr_value,
+                CSR:               ID_CSR
+            };
+
+    end
+
+    always_ff @ (posedge clk) begin
+        if (!rst_n) EX <= '0;
+        else EX <= EX_n;
+    end
+
+    // Branch predictor state (global history, BHT, prediction counters) --
+    // not pipeline registers, so kept in their own block.
+    always_ff @ (posedge clk) begin
+
         if (!rst_n) begin
 
-            correct_predictions <= 0;
-            total_predictions <= 0;
-        
             gh <= 0;
-            EX_pc_4 <= 32'b0;
-            EX_pc_imm <= 32'b0;
-            EX_BHTaddr <= 8'b0;
-            EX_funct3 <= 3'b0;
-            EX_field <= 4'b0;
-            EX_ValidReg <= 3'b0;
-            EX_ALUOp <= 2'b0;
-            EX_RegSrc <= 3'b0;
-            EX_ALUSrc <= 2'b0;
-            EX_RegWrite <= 1'b0;
-            EX_MemRead <= 1'b0;
-            EX_MemWrite <= 1'b0;
-            EX_Branch <= 1'b0;
-            EX_branch_prediction <= 2'b0;
-            EX_Jump <= 1'b0;
-            EX_rs1_data <= 32'b0;
-            EX_rs2_data <= 32'b0;
-            EX_imm <= 32'b0;
-            EX_rd <= 5'b0;
-            EX_rs1 <= 5'b0;
-            EX_rs2 <= 5'b0;
-            EX_csr_addr <= 12'b0;
-            EX_csr_write <= 1'b0;
-            EX_csr_value <= 32'b0;
-            EX_CSR <= 0;
-            
-            for (int i = 0; i < 256; i = i+1) begin
+            for (int i = 0; i < BHTsize; i = i+1) BHT[i] <= 2'b01;
 
-                BHT[i] <= 2'b01;
+        end else if (EX.Branch) begin
 
-            end
-        
-        end else begin
+            total_predictions <= total_predictions + 1;
+            gh <= {gh[ghsize-2:0], EX_branch_taken};
 
-            if (EX_Branch) total_predictions <= total_predictions+1;
-     
-            if (EX_Flush) begin
-            
-                EX_pc_4 <= 32'b0;
-                EX_pc_imm <= 32'b0;
-                EX_BHTaddr <= 8'b0;
-                EX_funct3 <= 3'b0;
-                EX_field <= 4'b0;
-                EX_ValidReg <= 3'b0;
-                EX_ALUOp <= 2'b0;
-                EX_RegSrc <= 3'b0;
-                EX_ALUSrc <= 2'b0;
-                EX_RegWrite <= 1'b0;
-                EX_MemRead <= 1'b0;
-                EX_MemWrite <= 1'b0;
-                EX_Branch <= 1'b0;
-                EX_branch_prediction <= 2'b0;
-                EX_Jump <= 1'b0;
-                EX_rs1_data <= 32'b0;
-                EX_rs2_data <= 32'b0;
-                EX_imm <= 32'b0;
-                EX_rd <= 5'b0;
-                EX_rs1 <= 5'b0;
-                EX_rs2 <= 5'b0;
-                EX_csr_addr <= 12'b0;
-                EX_csr_write <= 1'b0;
-                EX_csr_value <= 32'b0;
-                EX_CSR <= 1'b0;
-            
-            end
-           
-            else if (ID_Stall) begin
-            
-                EX_funct3 <= 3'b0;
-                EX_field <= 4'b0;
-                EX_ValidReg <= 3'b0;
-                EX_ALUOp <= 2'b0;
-                EX_RegSrc <= 3'b0;
-                EX_ALUSrc <= 2'b0;
-                EX_RegWrite <= 1'b0;
-                EX_MemRead <= 1'b0;
-                EX_MemWrite <= 1'b0;
-                EX_Branch <= 1'b0;
-                EX_branch_prediction <= 2'b0;
-                EX_Jump <= 1'b0;
-                EX_csr_write <= 1'b0;
-                EX_CSR <= 1'b0;
-   
-            end
-            
-            else begin
-            
-                EX_pc_4 <= ID_pc_4;
-                EX_pc_imm <= ID_pc_imm;
-                EX_BHTaddr <= ID_BHTaddr;
-                EX_funct3 <= ID_funct3;
-                EX_field <= ID_field;
-                EX_ValidReg <= ID_ValidReg;
-                EX_ALUOp <= ID_ALUOp;
-                EX_RegSrc <= ID_RegSrc;
-                EX_ALUSrc <= ID_ALUSrc;
-                EX_RegWrite <= ID_RegWrite;
-                EX_MemRead <= ID_MemRead;
-                EX_MemWrite <= ID_MemWrite;
-                EX_Branch <= ID_Branch;
-                EX_branch_prediction <= ID_branch_prediction;
-                EX_Jump <= ID_Jump;
-                EX_rs1_data <= ID_rs1_data;
-                EX_rs2_data <= ID_rs2_data;
-                EX_imm <= ID_imm;
-                EX_rd <= ID_rd;
-                EX_rs1 <= ID_rs1;
-                EX_rs2 <= ID_rs2;
-                EX_csr_addr <= ID_csr_addr;
-                EX_csr_write <= ID_csr_write;
-                EX_csr_value <= ID_csr_value;
-                EX_CSR <= ID_CSR;
-            
-            end
-            
-            if (EX_Branch) begin
-    
-                gh <= {gh[6:0], EX_branch_taken};
-    
-                case (EX_prediction_status)
-    
-                    0: begin
-                        
-                        BHT[EX_BHTaddr] <= BHT[EX_BHTaddr]+1;
-    
-                    end
-                    1: begin
-                        
-                        BHT[EX_BHTaddr] <= BHT[EX_BHTaddr]-1;
-    
-                    end
-                    2: begin
-                        
-                        if (BHT[EX_BHTaddr] > 0)  BHT[EX_BHTaddr] <= BHT[EX_BHTaddr]-1;
-                        correct_predictions <= correct_predictions+1;
-    
-                    end
-                    3: begin
-                        
-                        if (BHT[EX_BHTaddr] < 3 && EX_branch_prediction > 1)  BHT[EX_BHTaddr] <= BHT[EX_BHTaddr]+1;
-                        correct_predictions <= correct_predictions+1;
-    
-                    end
-    
-                endcase
+            case (EX_prediction_status)
 
-            end
-        
+                0: BHT[EX.BHTaddr] <= BHT[EX.BHTaddr] + 1;
+                1: BHT[EX.BHTaddr] <= BHT[EX.BHTaddr] - 1;
+                2: begin
+                    if (BHT[EX.BHTaddr] > 0) BHT[EX.BHTaddr] <= BHT[EX.BHTaddr] - 1;
+                    correct_predictions <= correct_predictions + 1;
+                end
+                3: begin
+                    if (BHT[EX.BHTaddr] < 3 && EX.branch_prediction > 1) BHT[EX.BHTaddr] <= BHT[EX.BHTaddr] + 1;
+                    correct_predictions <= correct_predictions + 1;
+                end
+
+            endcase
+
         end
-        
+
     end
-    
-    // MEM
-    
-    always @ (posedge clk) begin
-    
-        if (!rst_n) begin
-        
-            MEM_pc_4 <= 0;
-            MEM_pc_imm <= 0;
-            MEM_funct3 <= 0;
-            MEM_ValidReg <= 0;
-            MEM_RegSrc <= 0;
-            MEM_RegWrite <= 0;
-            MEM_MemRead <= 0;
-            MEM_MemWrite <= 0;
-            MEM_ALU_result <= 0;
-            MEM_rs1 <= 0;
-            MEM_rs2_data <= 0;
-            MEM_rs2 <= 0;
-            MEM_rd <= 0;
-            MEM_csr_addr <= 0;
-            MEM_csr_write <= 0;
-            MEM_csr_value <= 0;
-            MEM_rs1_data <= 0;
-        
-        end else begin
-        
-            MEM_pc_4 <= EX_pc_4;
-            MEM_pc_imm <= EX_pc_imm;
-            MEM_funct3 <= EX_funct3;
-            MEM_ValidReg <= EX_ValidReg;
-            MEM_RegSrc <= EX_RegSrc;
-            MEM_RegWrite <= EX_RegWrite;
-            MEM_MemRead <= EX_MemRead;
-            MEM_MemWrite <= EX_MemWrite;
-            MEM_ALU_result <= EX_ALU_result;
-            MEM_rs1 <= EX_rs1;
-            MEM_rs2_data <= EX_rs2_data_final;
-            MEM_rs2 <= EX_rs2;
-            MEM_rd <= EX_rd;
-            MEM_csr_addr <= EX_csr_addr;
-            MEM_csr_write <= EX_csr_write;
-            MEM_csr_value <= EX_csr_value;
-            MEM_rs1_data <= EX_rs1_data_final;
-          
-        end
-    
+
+    // MEM 
+
+    always_ff @ (posedge clk) begin
+
+        if (!rst_n)
+            MEM <= '0;
+        else
+            MEM <= '{
+                pc_4:       EX.pc_4,
+                pc_imm:     EX.pc_imm,
+                funct3:     EX.funct3,
+                ValidReg:   EX.ValidReg,
+                RegSrc:     EX.RegSrc,
+                RegWrite:   EX.RegWrite,
+                MemRead:    EX.MemRead,
+                MemWrite:   EX.MemWrite,
+                ALU_result: EX_ALU_result,
+                rs1:        EX.rs1,
+                rs2_data:   EX_rs2_data_final,
+                rs2:        EX.rs2,
+                rd:         EX.rd,
+                csr_addr:   EX.csr_addr,
+                csr_write:  EX.csr_write,
+                csr_value:  EX.csr_value,
+                rs1_data:   EX_rs1_data_final
+            };
+
     end
-    
+
     // WB
-    
-    always @ (posedge clk) begin
-    
+
+    always_ff @ (posedge clk) begin
+
         if (!rst_n) begin
-        
-            WB_pc_4 <= 0;
-            WB_pc_imm <= 0;
-            WB_funct3 <= 0;
-            WB_ValidReg <= 0;
-            WB_RegSrc <= 0;
-            WB_MemRead <= 0;
-            WB_RegWrite <= 0;
-            WB_ALU_result <= 0;
-            WB_rs1 <= 0;
-            WB_rd <= 0;
-            WB_csr_addr <= 0;
-            WB_csr_write <= 0;
-            WB_csr_value <= 0;
-            WB_rs1_data <= 0;
-        
+
+            WB <= '0;
+
         end else begin
 
-            if (WB_ValidReg != 3'b000) minstret <= minstret+1;
-        
-            WB_pc_4 <= MEM_pc_4;
-            WB_pc_imm <= MEM_pc_imm;
-            WB_funct3 <= MEM_funct3;
-            WB_ValidReg <= MEM_ValidReg;
-            WB_RegSrc <= MEM_RegSrc;
-            WB_MemRead <= MEM_MemRead;
-            WB_RegWrite <= MEM_RegWrite;
-            WB_ALU_result <= MEM_ALU_result;
-            WB_rs1 <= MEM_rs1;
-            WB_rd <= MEM_rd;
-            WB_csr_addr <= MEM_csr_addr;
-            WB_csr_write <= MEM_csr_write;
-            WB_csr_value <= MEM_csr_value_final;
-            WB_rs1_data <= MEM_rs1_data;
+            if (WB.ValidReg != 3'b000) minstret <= minstret+1;
 
-            if (WB_csr_write) begin
+            WB <= '{
+                pc_4:       MEM.pc_4,
+                pc_imm:     MEM.pc_imm,
+                funct3:     MEM.funct3,
+                ValidReg:   MEM.ValidReg,
+                RegSrc:     MEM.RegSrc,
+                MemRead:    MEM.MemRead,
+                RegWrite:   MEM.RegWrite,
+                ALU_result: MEM.ALU_result,
+                rs1:        MEM.rs1,
+                rd:         MEM.rd,
+                csr_addr:   MEM.csr_addr,
+                csr_write:  MEM.csr_write,
+                csr_value:  MEM_csr_value_final,
+                rs1_data:   MEM.rs1_data
+            };
 
-                case (WB_csr_addr)
+            if (WB.csr_write) begin
+
+                case (WB.csr_addr)
 
                     MCYCLE: mcycle <= {32'b0, WB_csr_write_data};
                     MINSTRET: minstret <= WB_csr_write_data;
@@ -694,9 +592,9 @@ module Core (
                 endcase
 
             end
-        
+
         end
-    
+
     end
 
 endmodule
