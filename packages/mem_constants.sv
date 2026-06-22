@@ -13,6 +13,6 @@ package mem_constants;
                                 DMEM_END   = mem_large ? 32'h00250000 : 32'h00007700,
                                 ADDR_WIDTH = $clog2(DMEM_END-IMEM_START);
 
-    localparam LEDS = 32'h7800;
+    localparam LEDS = mem_large ? 32'h00250100 : 32'h00007800;
 
 endpackage

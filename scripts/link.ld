@@ -1,6 +1,7 @@
 /* linker.ld — IMEM: [0x00000000, 0x00005000)
  *             DMEM: [0x00005000, 0x00007900)
- *             IO:   [0x00007900, 0x00008000)
+               CSRS: [0x00007700, 0x00007800)
+ *             IO:   [0x00007800, 0x00008000)
  */
 
 OUTPUT_ARCH(riscv)
@@ -9,8 +10,9 @@ ENTRY(_start)
 MEMORY
 {
   IMEM (rx)  : ORIGIN = 0x00000000, LENGTH = 0x00005000
-  DMEM (rwx) : ORIGIN = 0x00005000, LENGTH = 0x00002900
-  IO (rwx)   : ORIGIN = 0x00007900, LENGTH = 0x00000100
+  DMEM (rwx) : ORIGIN = 0x00005000, LENGTH = 0x00002700
+  CSRS (rwx) : ORIGIN = 0x00007700, LENGTH = 0x00000100
+  IO (rwx)   : ORIGIN = 0x00007800, LENGTH = 0x00000200
 }
 
 PROVIDE(__imem_start = ORIGIN(IMEM));

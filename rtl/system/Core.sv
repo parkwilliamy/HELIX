@@ -83,7 +83,8 @@ module Core (
     mem_reg_t MEM;
 
     logic [XLEN-1:0] MEM_rs2_fwd_data, MEM_rs2_data_final, MEM_csr_value_final;
-    logic MEM_rs2_fwd, MEM_csr_fwd, MEM_io, web_final;
+    logic MEM_rs2_fwd, MEM_csr_fwd, MEM_io;
+    logic [3:0] web_io, web_final;
 
     // WB -- registered payload; rd_write_data / csr_write_data are combinational (WriteBack / CSRControl outputs)
 
@@ -267,9 +268,9 @@ module Core (
         .dib(dib)
     );
 
-    assign MEM_io = (MEM.ALU_result < DMEM_END);
-    assign web = MEM_io ? web_final : 4'b0;
-    assign web_io = MEM_io ? 4'b0 : web_final;
+    assign MEM_io = (MEM.ALU_result >= DMEM_END);
+    assign web_io = MEM_io ? web_final : 4'b0;
+    assign web = MEM_io ? 4'b0 : web_final;
 
 
     // =============================== REGFILE WRITEBACK ===============================+
@@ -637,10 +638,23 @@ module Core (
 
             if (MEM.MemWrite && web_io != 4'b0) begin // If instruction in MEM is a store and IO write is enabled
 
-                for (int i = 0; i < 4; i++) begin
-                    if (web_io[i]) led[MEM.ALU_result[ADDR_WIDTH-1:0]][8*i +:8] <= dib[8*i +:8]; // IO write
-                end
-                WB_io_data <= led[MEM.ALU_result[ADDR_WIDTH-1:0]]; // IO read
+                case (MEM.ALU_result[ADDR_WIDTH-1:0])
+
+                    LEDS[ADDR_WIDTH-1:0]: begin
+
+                        for (int i = 0; i < 4; i++) begin
+                            if (web_io[i]) led[8*i +:8] <= dib[8*i +:8]; // IO write
+                        end
+                        WB_io_data <= {16'b0, led}; // IO read
+
+                    end
+
+                    default: begin // Verilator
+                    end
+
+                    // Rest of IO space reserved for now
+
+                endcase
 
             end
 

@@ -10,6 +10,7 @@ module top_tb (input rst_n, clk);
     logic [ADDR_WIDTH-1:0] addra_cpu, addrb_cpu;
     logic [XLEN-1:0] doa, dob; // Port A is IMEM, Port B is DMEM
     logic [XLEN-1:0] dia, dib;
+    logic [15:0] led;
     
     logic [ADDR_WIDTH-1:0] row_a, row_b;
     
@@ -36,7 +37,8 @@ module top_tb (input rst_n, clk);
         .addra(addra_cpu),
         .addrb(addrb_cpu),
         .web(web),
-        .dib(dib)
+        .dib(dib),
+        .led(led)
     );
 
 

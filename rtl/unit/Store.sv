@@ -7,7 +7,7 @@ module Store (
     input logic MemWrite,
     input logic [XLEN-1:0] addrb, rs2_data,
     input logic [2:0] funct3,
-    output logic [3:0] web_final
+    output logic [3:0] web_final,
     output logic [XLEN-1:0] dib
 );
 
