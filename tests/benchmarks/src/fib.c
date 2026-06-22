@@ -14,10 +14,7 @@ int main() {
     *(volatile int*)0x6000 = x;
     unsigned long elapsed = read_csr(mcycle) - start;
 
-    *CLK_CYCLE_ADDR = elapsed;
-    *RETIRED_INSTRUCTIONS_ADDR = read_csr(minstret);
-    *CORRECT_PREDICTIONS_ADDR = read_csr(mhpmcounter3);
-    *TOTAL_PREDICTIONS_ADDR = read_csr(mhpmcounter4);
+    write_csrs(elapsed);
 
     return 0;
 }
