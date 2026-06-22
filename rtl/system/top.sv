@@ -6,7 +6,7 @@ import mem_constants::*;
 module top (
     input logic clk, rst_n_mem, rst_n_cpu, rst_clk, mem_control, RX,
     output logic TX,
-    output logic [12:0] led // NOTE: LEDs are used to avoid Vivado optimizing away all the modules
+    output logic [15:0] led 
 );
 
     // Clock Wizard is used to convert 100MHz Basys-3 clock into 57MHz for CPU
@@ -58,7 +58,8 @@ module top (
         .addra(addra_cpu),
         .addrb(addrb_cpu),
         .web(web),
-        .dib(dib)
+        .dib(dib),
+        .led(led)
     );
 
     logic TX_enable, byte_done;
@@ -91,9 +92,5 @@ module top (
         .dia(dia),
         .TX_data(TX_data)
     );
-
-    assign led[12:9] = web;
-    assign led[8:1] = TX_data;
-    assign led[0] = byte_done;
     
 endmodule

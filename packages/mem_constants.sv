@@ -10,7 +10,9 @@ package mem_constants;
     localparam logic [XLEN-1:0] IMEM_START = 32'h00000000,
                                 IMEM_END   = mem_large ? 32'h00200000 : 32'h00005000,
                                 DMEM_START = IMEM_END,
-                                DMEM_END   = mem_large ? 32'h00250000 : 32'h00008000,
+                                DMEM_END   = mem_large ? 32'h00250000 : 32'h00007700,
                                 ADDR_WIDTH = $clog2(DMEM_END-IMEM_START);
+
+    localparam LEDS = 32'h7800;
 
 endpackage

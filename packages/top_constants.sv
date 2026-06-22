@@ -38,4 +38,5 @@ package top_constants;
         TOTAL_PREDICTIONS = 12'hB04 // mhpmcounter4
     } csr_encoding;
 
+
 endpackage

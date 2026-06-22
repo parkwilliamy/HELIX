@@ -9,7 +9,8 @@ module Core (
     input logic [XLEN-1:0] doa, dob,
     output logic [ADDR_WIDTH-1:0] addra, addrb,
     output logic [3:0] web,
-    output logic [XLEN-1:0] dib
+    output logic [XLEN-1:0] dib,
+    output logic [15:0] led
 );
 
     // NAMING CONVENTIONS
@@ -82,7 +83,7 @@ module Core (
     mem_reg_t MEM;
 
     logic [XLEN-1:0] MEM_rs2_fwd_data, MEM_rs2_data_final, MEM_csr_value_final;
-    logic MEM_rs2_fwd, MEM_csr_fwd;
+    logic MEM_rs2_fwd, MEM_csr_fwd, MEM_io, web_final;
 
     // WB -- registered payload; rd_write_data / csr_write_data are combinational (WriteBack / CSRControl outputs)
 
@@ -91,11 +92,11 @@ module Core (
         logic [4:0]  rs1, rd;
         logic [11:0] csr_addr;
         logic [2:0]  funct3, ValidReg, RegSrc;
-        logic MemRead, RegWrite, csr_write;
+        logic MemRead, RegWrite, csr_write, io;
     } wb_reg_t;
     wb_reg_t WB;
 
-    logic [XLEN-1:0] WB_rd_write_data, WB_csr_write_data;
+    logic [XLEN-1:0] WB_rd_write_data, WB_csr_write_data, WB_io_data, DMEM_word_final;
 
 
     // ********************************************************************************************************  CONTROL AND STATUS REGISTERS *****************************************************************************************************************
@@ -262,12 +263,18 @@ module Core (
         .addrb(MEM.ALU_result),
         .rs2_data(MEM_rs2_data_final),
         .funct3(MEM.funct3),
-        .web(web),
+        .web_final(web_final),
         .dib(dib)
     );
 
+    assign MEM_io = (MEM.ALU_result < DMEM_END);
+    assign web = MEM_io ? web_final : 4'b0;
+    assign web_io = MEM_io ? 4'b0 : web_final;
+
 
     // =============================== REGFILE WRITEBACK ===============================+
+
+    assign DMEM_word_final = WB.io ? WB_io_data : dob; // Select between reading IO register state or data word from memory
 
     WriteBack INST10 (
         .ALU_result(WB.ALU_result),
@@ -276,7 +283,7 @@ module Core (
         .csr_value(WB.csr_value),
         .funct3(WB.funct3),
         .RegSrc(WB.RegSrc),
-        .DMEM_word(dob),
+        .DMEM_word(DMEM_word_final),
         .rd_write_data(WB_rd_write_data)
     );
 
@@ -564,7 +571,8 @@ module Core (
                 csr_addr: MEM.csr_addr,
                 csr_write: MEM.csr_write,
                 csr_value: MEM_csr_value_final,
-                rs1_data: MEM.rs1_data
+                rs1_data: MEM.rs1_data,
+                io: MEM_io
             };
 
         end
@@ -610,6 +618,29 @@ module Core (
                     end
 
                 endcase
+
+            end
+
+        end
+
+    end
+
+    // MMIO Read-Write Logic
+
+    always_ff @ (posedge clk) begin
+
+        if (!rst_n) begin
+
+            led <= 16'b0;
+
+        end else begin
+
+            if (MEM.MemWrite && web_io != 4'b0) begin // If instruction in MEM is a store and IO write is enabled
+
+                for (int i = 0; i < 4; i++) begin
+                    if (web_io[i]) led[MEM.ALU_result[ADDR_WIDTH-1:0]][8*i +:8] <= dib[8*i +:8]; // IO write
+                end
+                WB_io_data <= led[MEM.ALU_result[ADDR_WIDTH-1:0]]; // IO read
 
             end
 
