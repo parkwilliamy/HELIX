@@ -1,3 +1,5 @@
+#include "def.h"
+
 int fib(int n) {
 
     if (n == 0 || n == 1) return n;
@@ -5,48 +7,17 @@ int fib(int n) {
 
 }
 
-static inline unsigned long read_mcycle(void) {
-    unsigned long v;
-    asm volatile ("csrr %0, mcycle" : "=r"(v));
-    return v;
-}
-
-static inline unsigned long read_minstret(void) {
-    unsigned long v;
-    asm volatile ("csrr %0, minstret" : "=r"(v));
-    return v;
-}
-
-static inline unsigned long read_correct_predictions(void) {
-    unsigned long v;
-    asm volatile ("csrr %0, mhpmcounter3" : "=r"(v));
-    return v;
-}
-
-static inline unsigned long read_total_predictions(void) {
-    unsigned long v;
-    asm volatile ("csrr %0, mhpmcounter4" : "=r"(v));
-    return v;
-}
-
 int main() {
 
-    volatile int* TOHOST = (volatile int*)0x00005000;
-    volatile int* CLK_CYCLE_ADDR = (volatile int*)0x00007900;
-    volatile int* RETIRED_INSTRUCTIONS_ADDR = (volatile int*)0x00007904;
-    volatile int* CORRECT_PREDICTIONS_ADDR = (volatile int*)0x00007908;
-    volatile int* TOTAL_PREDICTIONS_ADDR = (volatile int*)0x0000790C;
-
-    unsigned long start = read_mcycle();
+    unsigned long start = read_csr(mcycle);
     int x = fib(15);
     *(volatile int*)0x6000 = x;
-    unsigned long elapsed = read_mcycle() - start;
+    unsigned long elapsed = read_csr(mcycle) - start;
 
     *CLK_CYCLE_ADDR = elapsed;
-    *RETIRED_INSTRUCTIONS_ADDR =read_minstret();
-    *CORRECT_PREDICTIONS_ADDR = read_correct_predictions();
-    *TOTAL_PREDICTIONS_ADDR = read_total_predictions();
-    *TOHOST = 1;
+    *RETIRED_INSTRUCTIONS_ADDR = read_csr(minstret);
+    *CORRECT_PREDICTIONS_ADDR = read_csr(mhpmcounter3);
+    *TOTAL_PREDICTIONS_ADDR = read_csr(mhpmcounter4);
 
     return 0;
 }
