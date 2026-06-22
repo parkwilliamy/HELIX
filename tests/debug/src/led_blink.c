@@ -5,8 +5,9 @@ int main() {
     //unsigned long start = read_csr(mcycle);
     while (1) {
         *(volatile int*)0x7800 = 1;
-        while(100000000);
+        while(50000000);
         *(volatile int*)0x7800 = 0;
+        while(50000000);
     }
     //unsigned long elapsed = read_csr(mcycle) - start;
 
