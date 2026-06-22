@@ -65,10 +65,10 @@ module Core (
     ex_reg_t EX, EX_n;            // EX is the register; EX_n is its next-state (combinational)
 
     logic [XLEN-1:0] EX_op1, EX_op2, EX_rs1_fwd_data, EX_rs2_fwd_data,
-                     EX_rs1_data_final, EX_rs2_data_final, EX_ALU_result;
+                     EX_rs1_data_final, EX_rs2_data_final, EX_ALU_result, EX_csr_value_final;
     logic [1:0] EX_prediction_status;
     logic EX_zero, EX_sign, EX_overflow, EX_carry, EX_Flush, EX_branch_taken,
-          EX_rs1_fwd, EX_rs2_fwd;
+          EX_rs1_fwd, EX_rs2_fwd, EX_csr_fwd;
 
     // MEM -- registered payload; rs2/csr forwarding muxes are combinational
 
@@ -339,6 +339,7 @@ module Core (
         .MEM_MemWrite(MEM.MemWrite),
         .WB_MemRead(WB.MemRead),
         .WB_csr_write(WB.csr_write),
+        .EX_csr_addr(EX.csr_addr),
         .MEM_csr_addr(MEM.csr_addr),
         .WB_csr_addr(WB.csr_addr),
         .EX_rs1_fwd(EX_rs1_fwd),
@@ -347,12 +348,14 @@ module Core (
         .EX_rs1_fwd_data(EX_rs1_fwd_data),
         .EX_rs2_fwd_data(EX_rs2_fwd_data),
         .MEM_rs2_fwd_data(MEM_rs2_fwd_data),
+        .EX_csr_fwd(EX_csr_fwd),
         .MEM_csr_fwd(MEM_csr_fwd)
     );
 
     assign EX_rs1_data_final = (EX_rs1_fwd) ? EX_rs1_fwd_data : EX.rs1_data;
     assign EX_rs2_data_final = (EX_rs2_fwd) ? EX_rs2_fwd_data : EX.rs2_data;
     assign MEM_rs2_data_final = (MEM_rs2_fwd) ? MEM_rs2_fwd_data : MEM.rs2_data;
+    assign EX_csr_value_final = (EX_csr_fwd) ? WB_csr_write_data : EX.csr_value;
     assign MEM_csr_value_final = (MEM_csr_fwd) ? WB_csr_write_data : MEM.csr_value;
 
 
@@ -531,7 +534,7 @@ module Core (
                 rd: EX.rd,
                 csr_addr: EX.csr_addr,
                 csr_write: EX.csr_write,
-                csr_value: EX.csr_value,
+                csr_value: EX_csr_value_final,
                 rs1_data: EX_rs1_data_final
             };
 
