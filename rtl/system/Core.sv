@@ -642,7 +642,7 @@ module Core (
 
                     LEDS[ADDR_WIDTH-1:0]: begin
 
-                        for (int i = 0; i < 4; i++) begin
+                        for (int i = 0; i < 2; i++) begin
                             if (web_io[i]) led[8*i +:8] <= dib[8*i +:8]; // IO write
                         end
                         WB_io_data <= {16'b0, led}; // IO read
