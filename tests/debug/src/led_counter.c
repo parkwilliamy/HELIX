@@ -7,7 +7,7 @@ int main() {
     while (1) {
 
         *(volatile int*)0x7800 = tick;
-        counter(100);
+        counter(10000);
         tick++;
       
     }
