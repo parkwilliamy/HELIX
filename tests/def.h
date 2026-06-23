@@ -13,3 +13,8 @@ static inline void write_csrs(unsigned long elapsed) {
     *CORRECT_PREDICTIONS_ADDR = read_csr(mhpmcounter3);
     *TOTAL_PREDICTIONS_ADDR = read_csr(mhpmcounter4);
 }
+
+static inline void counter(unsigned int time) {
+    while (time > 0) {time -= 1;}
+    return;
+}
