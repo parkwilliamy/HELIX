@@ -12,7 +12,7 @@ int main() {
       
     }
 
-    *(volatile int*)0x5050 = *((volatile int*)7800);
+    *(volatile int*)0x5050 = *((volatile int*)0x7800);
    
     return 0;
 }
