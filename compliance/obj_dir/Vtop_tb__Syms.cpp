@@ -19,7 +19,7 @@ Vtop_tb__Syms::Vtop_tb__Syms(VerilatedContext* contextp, const char* namep, Vtop
     , TOP{this, namep}
 {
     // Check resources
-    Verilated::stackCheck(1002);
+    Verilated::stackCheck(1034);
     // Configure time unit / time precision
     _vm_contextp__->timeunit(-9);
     _vm_contextp__->timeprecision(-12);
