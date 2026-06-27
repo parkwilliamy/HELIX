@@ -102,8 +102,35 @@ module Core (
 
     // ********************************************************************************************************  CONTROL AND STATUS REGISTERS *****************************************************************************************************************
 
-    logic [63:0] mcycle;
-    logic [XLEN-1:0] minstret, correct_predictions, total_predictions;
+    logic [63:0] mstatus, 
+                 mcycle, 
+                 minstret, 
+                 mhpmcounter3, 
+                 mhpmcounter4, 
+                 mhpmevent3,
+                 mhpmevent4,
+                 menvcfg,
+                 mtime,
+                 mtimecmp;
+
+    logic [XLEN-1:0] misa, 
+                     mvendorid, 
+                     marchid, 
+                     mimpid, 
+                     mhartid,
+                     mtvec,
+                     mip,
+                     mie,
+                     mcounteren,
+                     mcountinhibit,
+                     mscratch,
+                     mepc,
+                     mcause,
+                     mtval,
+                     mconfigptr;
+
+    logic [1:0] priv; // current privilege level
+    logic [3:0] exceptions_status; // bit vector encoding pipeline stages that contain exceptional instructions
 
     // CPI = mcycle / minstret
     // Branch Predictor Accuracy = correct_predictions / total_predictions
@@ -214,8 +241,8 @@ module Core (
         .WB_rs1_data(WB.rs1_data),
         .mcycle(mcycle),
         .minstret(minstret),
-        .correct_predictions(correct_predictions),
-        .total_predictions(total_predictions),
+        .mhpmcounter3(mhpmcounter3),
+        .mhpmcounter4(mhpmcounter4),
         .WB_csr_value(WB.csr_value),
         .ID_csr_write(ID_csr_write),
         .csr_value(ID_csr_value),
@@ -586,10 +613,31 @@ module Core (
 
         if (!rst_n) begin
 
+            misa <= {2'b11, 4'b0, 26'h400};
+            mvendorid <= 0;
+            marchid <= 0;
+            mimpid <= 0;
+            mhartid <= 0;
+            mstatus <= 32'h1800;
+            mtvec <= 0;
+            mip <= 0;
+            mie <= 32'80; // Only enable timer interrupts
             mcycle <= 0;
             minstret <= 0;
-            correct_predictions <= 0;
-            total_predictions <= 0;
+            mhpmcounter3 <= 0; // Correct branch prediction counter
+            mhpmcounter4 <= 0; // Total branch prediction counter
+            mhpmevent3 <= 1; 
+            mhpmevent4 <= 2;
+            mcounteren <= 32'h1F; // Enable hpm4, hpm3, instret, time, cycles counters
+            mcountinhibit <= 32'h1F;
+            mscratch <= 0;
+            mepc <= 0;
+            mcause <= 0;
+            mtval <= 0;
+            mconfigptr <= 0;
+            menvcfg <= 0;
+            mtime <= 0;
+            mtimecmp <= 32'hFFFFFFFF;
 
         end else begin
 
@@ -599,11 +647,17 @@ module Core (
             if (WB.ValidReg != 3'b000) minstret <= minstret + 1;
 
             if (EX.Branch) begin
-                total_predictions <= total_predictions + 1;
+
+                if (mhpmevent4 == 2) mhpmcounter4 <= mhpmcounter4 + 1;
+                if (mhpmevent3 == 2) mhpmcounter3 <= mhpmcounter3 + 1;
+                
                 // prediction_status 2 and 3 indicate a correct prediction
                 if (EX_prediction_status == 2 || EX_prediction_status == 3)
-                    correct_predictions <= correct_predictions + 1;
-            end
+                    
+                    if (mhpmevent3 == 1) mhpmcounter3 <= mhpmcounter3 + 1;
+                    if (mhpmevent4 == 1) mhpmcounter4 <= mhpmcounter3 + 1;
+            
+                end
 
             // CSR writes in WB override the default counting (later
             // non-blocking assignment to the same target wins).
@@ -611,10 +665,14 @@ module Core (
 
                 case (WB.csr_addr)
 
-                    MCYCLE: mcycle <= {32'b0, WB_csr_write_data};
-                    MINSTRET: minstret <= WB_csr_write_data;
-                    CORRECT_PREDICTIONS: correct_predictions <= WB_csr_write_data;
-                    TOTAL_PREDICTIONS: total_predictions <= WB_csr_write_data;
+                    MCYCLE: mcycle[31:0] <= WB_csr_write_data;
+                    MCYCLEh: mcycle[63:32] <= WB_csr_write_data;
+                    MINSTRET: minstret[31:0] <= WB_csr_write_data;
+                    MINSTRETH: minstret[63:32] <= WB_csr_write_data;
+                    MHPMCOUNTER3: mhpmcounter3[31:0] <= WB_csr_write_data;
+                    MHPMCOUNTER3H: mhpmcounter3[63:32] <= WB_csr_write_data;
+                    MHPMCOUNTER4: mhpmcounter4[31:0] <= WB_csr_write_data;
+                    MHPMCOUNTER4H: mhpmcounter3[63:32] <= WB_csr_write_data;
                     default: begin // For Verilator
                     end
 
