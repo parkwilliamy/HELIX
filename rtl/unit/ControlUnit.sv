@@ -4,6 +4,7 @@ import top_constants::*;
 
 module ControlUnit (
     input logic [6:0] opcode,
+    input logic ID_PostFlush,
     output logic [2:0] ValidReg, RegSrc,
     output logic [1:0] ALUOp, ALUSrc,
     output logic RegWrite, MemRead, MemWrite, Branch, Jump, Valid, CSR
@@ -136,7 +137,7 @@ module ControlUnit (
                 MemWrite = 0;
                 Branch = 0;
                 Jump = 0;
-                Valid = 0;
+                Valid = ID_PostFlush ? 1 : 0; // If instruction is 0 because it was flushed, leave as "valid"; else it is an illegal instruction
                 ValidReg = 0;
                 CSR = 0;
 

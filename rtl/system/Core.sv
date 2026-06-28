@@ -54,7 +54,7 @@ module Core (
     // EX pipeline-register block). Stage-local combinational / module-output
     // signals are NOT registers, so they live outside the struct below.
     typedef struct packed {
-        logic [XLEN-1:0] pc_4, pc_imm, rs1_data, rs2_data, imm, csr_value;
+        logic [XLEN-1:0] pc, pc_4, pc_imm, rs1_data, rs2_data, imm, csr_value;
         logic [7:0] BHTaddr;
         logic [4:0] rs1, rs2, rd;
         logic [11:0] csr_addr;
@@ -74,7 +74,7 @@ module Core (
     // MEM -- registered payload; rs2/csr forwarding muxes are combinational
 
     typedef struct packed {
-        logic [XLEN-1:0] pc_4, pc_imm, ALU_result, rs2_data, csr_value, rs1_data;
+        logic [XLEN-1:0] pc, pc_4, pc_imm, ALU_result, rs2_data, csr_value, rs1_data;
         logic [4:0]  rs1, rs2, rd;
         logic [11:0] csr_addr;
         logic [2:0]  funct3, ValidReg, RegSrc;
@@ -83,13 +83,13 @@ module Core (
     mem_reg_t MEM;
 
     logic [XLEN-1:0] MEM_rs2_fwd_data, MEM_rs2_data_final, MEM_csr_value_final;
-    logic MEM_rs2_fwd, MEM_csr_fwd, MEM_io;
+    logic MEM_rs2_fwd, MEM_csr_fwd, MEM_io, MEM_Flush;
     logic [3:0] web_io, web_final;
 
     // WB -- registered payload; rd_write_data / csr_write_data are combinational (WriteBack / CSRControl outputs)
 
     typedef struct packed {
-        logic [XLEN-1:0] pc_4, pc_imm, ALU_result, csr_value, rs1_data;
+        logic [XLEN-1:0] pc, pc_4, pc_imm, ALU_result, csr_value, rs1_data;
         logic [4:0]  rs1, rd;
         logic [11:0] csr_addr;
         logic [2:0]  funct3, ValidReg, RegSrc;
@@ -98,6 +98,7 @@ module Core (
     wb_reg_t WB;
 
     logic [XLEN-1:0] WB_rd_write_data, WB_csr_write_data, WB_io_data, DMEM_word_final;
+    logic WB_Flush;
 
 
     // ********************************************************************************************************  CONTROL AND STATUS REGISTERS *****************************************************************************************************************
@@ -130,7 +131,12 @@ module Core (
                      mconfigptr;
 
     logic [1:0] priv; // current privilege level
-    logic [3:0] exceptions_status; // bit vector encoding pipeline stages that contain exceptional instructions
+    logic [3:0] exception_status, exception_status_n; // bit vector encoding pipeline stages that contain exceptional instructions
+    logic [5:0] exception_code [3]; // Each entry stores corresponding trap code for pipeline stage
+    logic [5:0] exception_code_n [3];
+    logic [3:0] interrupt_code;
+    logic critical_error, TrapTaken; // Asserted if double trap occurs
+    // MSB encodes exception/interrupt - lower 5 bits encode cause
 
     // CPI = mcycle / minstret
     // Branch Predictor Accuracy = correct_predictions / total_predictions
@@ -239,13 +245,8 @@ module Core (
         .ID_rd(ID_rd),
         .WB_rs1(WB.rs1),
         .WB_rs1_data(WB.rs1_data),
-        .mcycle(mcycle),
-        .minstret(minstret),
-        .mhpmcounter3(mhpmcounter3),
-        .mhpmcounter4(mhpmcounter4),
         .WB_csr_value(WB.csr_value),
         .ID_csr_write(ID_csr_write),
-        .csr_value(ID_csr_value),
         .WB_csr_write_data(WB_csr_write_data)
     );
 
@@ -288,6 +289,7 @@ module Core (
 
     Store INST9 (
         .MemWrite(MEM.MemWrite),
+        .exception_pending(exception_status[0]),
         .addrb(MEM.ALU_result),
         .rs2_data(MEM_rs2_data_final),
         .funct3(MEM.funct3),
@@ -330,6 +332,7 @@ module Core (
         .EX_Branch(EX.Branch),
         .ID_Jump(ID_Jump),
         .EX_Jump(EX.Jump),
+        .critical_error(critical_error),
         .ID_ALUSrc(ID_ALUSrc),
         .EX_ALUSrc(EX.ALUSrc),
         .IF_pc(IF_pc),
@@ -415,6 +418,24 @@ module Core (
 
     // IF
 
+    always_comb begin
+
+        if (IF_pc[1:0] != 2'b00) begin // Instruction address misaligned exception 
+        
+            exception_status_n[3] = 1;  
+            exception_code_n[3] = 6'b0;
+
+        end
+
+        else if (IF_pc >= IMEM_END) begin // Instruction access fault exception
+
+            exception_status_n[3] = 1; 
+            exception_code_n[3] = 6'b1;
+
+        end
+
+    end
+
     always_ff @ (posedge clk) begin
 
         if (!rst_n) begin
@@ -432,6 +453,30 @@ module Core (
     end
 
     // ID
+
+    always_comb begin
+
+        if (ID_Flush) begin
+
+            exception_status_n[2] = 0;
+            exception_code_n[2] = 0;
+
+        end
+
+        else if (!ID_Valid) begin
+
+            exception_status_n[2] = 1; // Illegal opcode exception
+            exception_code_n[2] = 6'd2;
+
+        end
+        else if (ID_RegSrc == 4 && ID_funct3 == 0) begin
+
+            exception_status_n[2] = 1; // EBREAK/breakpoint or ECALL/environment call exception
+            exception_code_n[2] = ID_csr_addr ? 6'd3 : 6'd11;
+
+        end
+
+    end
 
     always_ff @ (posedge clk) begin
 
@@ -480,8 +525,11 @@ module Core (
         // Flush and a stall bubble both inject a NOP
         if (EX_Flush || ID_Stall)
             EX_n = '0;
+            exception_status_n[1] = 0;
+            exception_code_n[1] = 0;
         else
             EX_n = '{
+                pc: ID_pc,
                 pc_4: ID_pc_4,
                 pc_imm: ID_pc_imm,
                 BHTaddr: ID_BHTaddr,
@@ -508,6 +556,34 @@ module Core (
                 csr_value: ID_csr_value,
                 CSR:ID_CSR
             };
+
+            if (EX.MemRead && EX_ALU_result[1:0] != 2'b00) begin // Load address misaligned exception
+
+                exception_status_n[1] = 1;
+                exception_code_n[1] = 6'd4;
+
+            end
+
+            else if (EX.MemRead && EX_ALU_result < DMEM_START || EX_ALU_result >= DMEM_END) begin // Load access fault exception
+
+                exception_status_n[1] = 1;
+                exception_code_n[1] = 6'd5;
+
+            end
+
+            else if (EX.MemWrite && EX_ALU_result[1:0] != 2'b00) begin // Store address misaligned exception
+
+                exception_status_n[1] = 1;
+                exception_code_n[1] = 6'd6;
+
+            end
+
+            else if (EX.MemWrite && EX_ALU_result < DMEM_START || EX_ALU_result >= DMEM_END) begin // Store access fault exception
+
+                exception_status_n[1] = 1;
+                exception_code_n[1] = 6'd7;
+
+            end
 
     end
 
@@ -548,34 +624,51 @@ module Core (
 
     // MEM 
 
+    always_comb begin
+
+        if (MEM_Flush) begin
+
+            exception_status_n[0] = 0;
+            exception_code_n[0] = 0;
+
+        end
+
+    end
+
     always_ff @ (posedge clk) begin
 
         if (!rst_n)
             MEM <= '0;
         else
-            MEM <= '{
-                pc_4: EX.pc_4,
-                pc_imm: EX.pc_imm,
-                funct3: EX.funct3,
-                ValidReg: EX.ValidReg,
-                RegSrc: EX.RegSrc,
-                RegWrite: EX.RegWrite,
-                MemRead: EX.MemRead,
-                MemWrite: EX.MemWrite,
-                ALU_result: EX_ALU_result,
-                rs1: EX.rs1,
-                rs2_data: EX_rs2_data_final,
-                rs2: EX.rs2,
-                rd: EX.rd,
-                csr_addr: EX.csr_addr,
-                csr_write: EX.csr_write,
-                csr_value: EX_csr_value_final,
-                rs1_data: EX_rs1_data_final
-            };
+
+            if (MEM_Flush) MEM <= '0;
+
+            else begin
+
+                MEM <= '{
+                    pc: EX.pc,
+                    pc_4: EX.pc_4,
+                    pc_imm: EX.pc_imm,
+                    funct3: EX.funct3,
+                    ValidReg: EX.ValidReg,
+                    RegSrc: EX.RegSrc,
+                    RegWrite: EX.RegWrite,
+                    MemRead: EX.MemRead,
+                    MemWrite: EX.MemWrite,
+                    ALU_result: EX_ALU_result,
+                    rs1: EX.rs1,
+                    rs2_data: EX_rs2_data_final,
+                    rs2: EX.rs2,
+                    rd: EX.rd,
+                    csr_addr: EX.csr_addr,
+                    csr_write: EX.csr_write,
+                    csr_value: EX_csr_value_final,
+                    rs1_data: EX_rs1_data_final
+                };
+
+            end
 
     end
-
-    // WB
 
     always_ff @ (posedge clk) begin
 
@@ -585,29 +678,87 @@ module Core (
 
         end else begin
 
-            WB <= '{
-                pc_4: MEM.pc_4,
-                pc_imm: MEM.pc_imm,
-                funct3: MEM.funct3,
-                ValidReg: MEM.ValidReg,
-                RegSrc: MEM.RegSrc,
-                MemRead: MEM.MemRead,
-                RegWrite: MEM.RegWrite,
-                ALU_result: MEM.ALU_result,
-                rs1: MEM.rs1,
-                rd: MEM.rd,
-                csr_addr: MEM.csr_addr,
-                csr_write: MEM.csr_write,
-                csr_value: MEM_csr_value_final,
-                rs1_data: MEM.rs1_data,
-                io: MEM_io
-            };
+            if (WB_Flush) WB <= '0;
+         
+            else begin
+
+                WB <= '{
+                    pc: MEM.pc,
+                    pc_4: MEM.pc_4,
+                    pc_imm: MEM.pc_imm,
+                    funct3: MEM.funct3,
+                    ValidReg: MEM.ValidReg,
+                    RegSrc: MEM.RegSrc,
+                    MemRead: MEM.MemRead,
+                    RegWrite: MEM.RegWrite,
+                    ALU_result: MEM.ALU_result,
+                    rs1: MEM.rs1,
+                    rd: MEM.rd,
+                    csr_addr: MEM.csr_addr,
+                    csr_write: MEM.csr_write,
+                    csr_value: MEM_csr_value_final,
+                    rs1_data: MEM.rs1_data,
+                    io: MEM_io
+                };
+
+            end
 
         end
 
     end
 
-    // CSR registers 
+    // CSR registers and exception handling
+
+    always_comb begin
+
+        ID_Flush = exception_status[0] || critical_error;
+        EX_Flush = exception_status[0] || critical_error;
+        MEM_Flush = exception_status[0] || critical_error;
+        WB_Flush = exception_status[0] || critical_error;
+
+        // Implement WFI instruction as NOP
+
+        if (ID_RegSrc == 4 && ID_rs2 == 5'b00101) EX_Flush = 1;
+        else EX_Flush = 0;
+
+        // CSR read logic
+
+        if (ID_CSR && (ID_funct3[1:0] != 2'b01 || ID_rd != 5'b0)) begin // For CSRRW and CSRRWI, ignore reads to rd = x0
+            
+            case (ID_csr_addr)
+
+                MISA: ID_csr_value = (WB_csr_addr == ID_csr_addr) ? WB_csr_write_data : misa;
+                MVENDORID, MARCHID, MIMPID, MHARTID, MCONFIGPTR, MENVCFG, MENVCFGH: ID_csr_value = 0; // Read only 0 registers
+                MSTATUS: ID_csr_value = (WB_csr_addr == ID_csr_addr) ? WB_csr_write_data : mstatus[31:0];
+                MSTATUSH: ID_csr_value = (WB_csr_addr == ID_csr_addr) ? WB_csr_write_data : mstatus[63:32];
+                MTVEC: ID_csr_value = (WB_csr_addr == ID_csr_addr) ? WB_csr_write_data : mtvec;
+                MIP: ID_csr_value = (WB_csr_addr == ID_csr_addr) ? WB_csr_write_data : mip;
+                MIE: ID_csr_value = (WB_csr_addr == ID_csr_addr) ? WB_csr_write_data : mie;
+                MCYCLE: ID_csr_value = (WB_csr_addr == ID_csr_addr) ? WB_csr_write_data : mcycle[31:0];
+                MCYCLEH: ID_csr_value = (WB_csr_addr == ID_csr_addr) ? WB_csr_write_data : mcycle[63:32];
+                MINSTRET: ID_csr_value = (WB_csr_addr == ID_csr_addr) ? WB_csr_write_data : minstret[31:0];
+                MINSTRETH: ID_csr_value = (WB_csr_addr == ID_csr_addr) ? WB_csr_write_data : minstret[63:32];
+                MHPMCOUNTER3: ID_csr_value = (WB_csr_addr == ID_csr_addr) ? WB_csr_write_data : mhpmcounter3[31:0];
+                MHPMCOUNTER3H: ID_csr_value = (WB_csr_addr == ID_csr_addr) ? WB_csr_write_data : mhpmcounter3[63:32];
+                MHPMCOUNTER4: ID_csr_value = (WB_csr_addr == ID_csr_addr) ? WB_csr_write_data : mhpmcounter4[31:0];
+                MHPMCOUNTER4H: ID_csr_value = (WB_csr_addr == ID_csr_addr) ? WB_csr_write_data : mhpmcounter4[63:32];
+                MHPMEVENT3: ID_csr_value = (WB_csr_addr == ID_csr_addr) ? WB_csr_write_data : mhpmevent3;  
+                MHPMEVENT4: ID_csr_value = (WB_csr_addr == ID_csr_addr) ? WB_csr_write_data : mhpmevent4;
+                MCOUNTEREN: ID_csr_value = (WB_csr_addr == ID_csr_addr) ? WB_csr_write_data : mcounteren;
+                MCOUNTINHIBIT: ID_csr_value = (WB_csr_addr == ID_csr_addr) ? WB_csr_write_data : mcountinhibit;
+                MSCRATCH: ID_csr_value = (WB_csr_addr == ID_csr_addr) ? WB_csr_write_data : mscratch;
+                MEPC: ID_csr_value = (WB_csr_addr == ID_csr_addr) ? WB_csr_write_data : mepc;
+                MCAUSE: ID_csr_value = (WB_csr_addr == ID_csr_addr) ? WB_csr_write_data : mcause;
+                MTVAL: ID_csr_value = (WB_csr_addr == ID_csr_addr) ? WB_csr_write_data : mtval;
+                default: ID_csr_value = 0;
+
+            endcase
+
+        end
+
+        else ID_csr_value = 0;
+
+    end
 
     always_ff @ (posedge clk) begin
 
@@ -638,26 +789,40 @@ module Core (
             menvcfg <= 0;
             mtime <= 0;
             mtimecmp <= 32'hFFFFFFFF;
+            priv <= 2'b11;
+            exception_status <= 4'b0;
+
+            for (int i = 0; i < 4; i++) begin
+
+                exception_code[i] <= 0;
+
+            end
+
+            critical_error <= 0;
+            TrapTaken <= 0;
 
         end else begin
 
             // Default counting behavior
-            mcycle <= mcycle + 1;
+            if (mcountinhibit[0]) mcycle <= mcycle + 1;
+            if (mcountinhibit[1]) mtime <= mtime + 1;
 
-            if (WB.ValidReg != 3'b000) minstret <= minstret + 1;
+            if (WB.ValidReg != 3'b000 && mcountinhibit[2]) minstret <= minstret + 1;
 
             if (EX.Branch) begin
 
-                if (mhpmevent4 == 2) mhpmcounter4 <= mhpmcounter4 + 1;
-                if (mhpmevent3 == 2) mhpmcounter3 <= mhpmcounter3 + 1;
+                if (mhpmevent4 == 2 && mcountinhibit[4]) mhpmcounter4 <= mhpmcounter4 + 1;
+                if (mhpmevent3 == 2 && mcountinhibit[3]) mhpmcounter3 <= mhpmcounter3 + 1;
                 
                 // prediction_status 2 and 3 indicate a correct prediction
-                if (EX_prediction_status == 2 || EX_prediction_status == 3)
+                if (EX_prediction_status == 2 || EX_prediction_status == 3) begin
                     
-                    if (mhpmevent3 == 1) mhpmcounter3 <= mhpmcounter3 + 1;
-                    if (mhpmevent4 == 1) mhpmcounter4 <= mhpmcounter3 + 1;
+                    if (mhpmevent3 == 1 && mcountinhibit[3]) mhpmcounter3 <= mhpmcounter3 + 1;
+                    if (mhpmevent4 == 1 && mcountinhibit[4]) mhpmcounter4 <= mhpmcounter3 + 1;
             
                 end
+
+            end
 
             // CSR writes in WB override the default counting (later
             // non-blocking assignment to the same target wins).
@@ -665,18 +830,107 @@ module Core (
 
                 case (WB.csr_addr)
 
-                    MCYCLE: mcycle[31:0] <= WB_csr_write_data;
-                    MCYCLEh: mcycle[63:32] <= WB_csr_write_data;
+                    MISA: {misa[25:5], misa[3:0]} <= {WB_csr_write_data[25:5], WB_csr_write_data[3:0]}; // MXL field and E bit read only
+                    MSTATUS: {mstatus[12:11], mstatus[7], mstatus[3]} <= {WB_csr_write_data[12:11], WB_csr_write_data[7], WB_csr_write_data[3]}; // MPP, MPIE, MIE only writeable fields
+                    MSTATUSH: mstatus[42] <= WB_csr_write_data[10]; // MDT only writeable field
+                    MTVEC: mtvec <= WB_csr_write_data;
+                    MIP: mip[7] <= WB_csr_write_data[7];
+                    MIE: mie[7] <= WB_csr_write_data;
+                    MCYCLE: mcycle[31:0] <= WB_csr_write_data; 
+                    MCYCLEH: mcycle[63:32] <= WB_csr_write_data;
                     MINSTRET: minstret[31:0] <= WB_csr_write_data;
                     MINSTRETH: minstret[63:32] <= WB_csr_write_data;
                     MHPMCOUNTER3: mhpmcounter3[31:0] <= WB_csr_write_data;
                     MHPMCOUNTER3H: mhpmcounter3[63:32] <= WB_csr_write_data;
                     MHPMCOUNTER4: mhpmcounter4[31:0] <= WB_csr_write_data;
                     MHPMCOUNTER4H: mhpmcounter3[63:32] <= WB_csr_write_data;
+                    MHPMEVENT3: mhpmevent3 <= WB_csr_write_data;
+                    MHPMEVENT4: mhpmevent4 <= WB_csr_write_data;
+                    MCOUNTEREN: mcounteren <= WB_csr_write_data;
+                    MCOUNTINHIBIT: mcountinhibit <= WB_csr_write_data;
+                    MSCRATCH: mscratch <= WB_csr_write_data;
+                    MEPC: mepc <= WB_csr_write_data;
+                    MCAUSE: mcause <= WB_csr_write_data;
+                    MTVAL: mtval <= WB_csr_write_data;
                     default: begin // For Verilator
                     end
 
                 endcase
+
+            end
+
+            exception_code[3] <= exception_status_n[3] ? exception_code_n[3] : 0;
+            exception_status[3] <= exception_status_n[3];
+
+            for (int i = 2; i >= 0; i--) begin
+
+                exception_code[i] <= exception_status_n[i] ? exception_code_n[i] : exception_code[i+1];
+                exception_status[i] <= exception_status_n[i];
+
+            end
+
+            // Exception handling logic / Trap handler entry
+
+            if (exception_status[0]) begin
+
+                mepc <= WB_pc;
+                mcause <= {1'b0, 25'b0, exception_code[0]};
+                priv <= 2'b11;
+                IF_pc <= mtvec;
+                case (exception_code[0])
+
+                    INST_ADDR_MISALIGN, LOAD_ADDR_MISALIGN, STORE_ADDR_MISALIGN: mtval <= WB.ALU_result; // write misaligned address to mtval
+                    default: mtval <= 0;
+
+                endcase
+                TrapTaken <= 1;
+
+            end
+
+            // Double trap handling
+
+            if (mstatus[42] && TrapTaken) begin // if MDT and trap taken, double trap exception occurs
+
+                mstatus[12:11] <= 2'b11; // Set previous privilege to machine mode
+                mstatus[7] <= mstatus[3]; // Set MPIE to MIE
+                mstatus[3] <= 0; // Set MIE to 0
+                critical_error <= 1; // Assert critical error
+
+            end
+
+            // Exception return / mret logic
+
+            if (ID_RegSrc == 4 && ID_funct7 == 7'b0011000) begin
+
+                mstatus[3] <= mstatus[7]; // Set MIE to MPIE
+                priv <= 2'b11;
+                mstatus[12:11] <= 2'b11; // Set previous privilege to machine mode
+                IF_pc <= mepc; // Restore PC to where exception initially occured
+
+            end
+
+            // Timer Interrupt
+
+            if (mstatus[3]) begin // If interrupts enabled 
+
+                if (mie[7]) begin // If timer interrupts enabled
+
+                    if (mtime >= mtimecmp) interrupt_code <= 4'd7;
+                    else if (mtime == 64'hFFFFFFFFFFFFFFFF) interrupt_code <= 4'd13;
+
+                    mip[7] <= 1;
+
+                end
+         
+            end
+
+            if (exception_status == 0 && mip[7]) begin // If no pending exceptions and timer interrupts pending
+
+                mepc <= WB_pc;
+                mcause <= {1'b0, 25'b0, interrupt_code};
+                priv <= 2'b11;
+                IF_pc <= mtvec;
+                TrapTaken <= 1;
 
             end
 
@@ -698,18 +952,48 @@ module Core (
 
                 case (MEM.ALU_result[ADDR_WIDTH-1:0])
 
-                    LEDS[ADDR_WIDTH-1:0]: begin
+                    MTIME: begin
+
+                        for (int i = 0; i < 4; i++) begin
+                            if (web_io[i]) mtime[8*i +:8] <= dib[8*i +:8]; // IO write
+                        end
+                        
+                    end
+
+                    MTIME+4: begin
+
+                        for (int i = 4; i < 8; i++) begin
+                            if (web_io[i]) mtime[8*i +:8] <= dib[8*i +:8]; 
+                        end
+                        
+                    end
+
+                    MTIMECMP: begin
+
+                        for (int i = 0; i < 4; i++) begin
+                            if (web_io[i]) mtime[8*i +:8] <= dib[8*i +:8]; 
+                        end
+                        
+                    end
+
+                    MTIMECMP+4: begin
+
+                        for (int i = 4; i < 8; i++) begin
+                            if (web_io[i]) mtime[8*i +:8] <= dib[8*i +:8]; 
+                        end
+                        
+                    end
+
+                    LEDS: begin
 
                         for (int i = 0; i < 2; i++) begin
-                            if (web_io[i]) led[8*i +:8] <= dib[8*i +:8]; // IO write
+                            if (web_io[i]) led[8*i +:8] <= dib[8*i +:8]; 
                         end
 
                     end
 
                     default: begin // Verilator
                     end
-
-                    // Rest of IO space reserved for now
 
                 endcase
 
@@ -718,6 +1002,14 @@ module Core (
             if (MEM.MemRead && MEM_io) begin // If instruction in MEM is a load from IO space
 
                 case (MEM.ALU_result[ADDR_WIDTH-1:0])
+
+                    MTIME: WB_io_data <= mtime[31:0];
+
+                    MTIME+4: WB_io_data <= mtime[63:32];
+
+                    MTIMECMP: WB_io_data <= mtimecmp[31:0];
+
+                    MTIMECMP+4: WB_io_data <= mtimecmp[63:32];
 
                     LEDS[ADDR_WIDTH-1:0]: WB_io_data <= {16'b0, led}; // IO read returns current register state
 

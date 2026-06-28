@@ -5,7 +5,7 @@ import branch_constants::*;
 
 module Fetch (
     input logic [1:0] IF_branch_prediction, ID_branch_prediction, prediction_status, ID_ALUSrc, EX_ALUSrc,
-    input logic IF_BTBhit, ID_BTBhit, IF_Branch, IF_Jump, ID_Branch, EX_Branch, ID_Jump, EX_Jump, 
+    input logic IF_BTBhit, ID_BTBhit, IF_Branch, IF_Jump, ID_Branch, EX_Branch, ID_Jump, EX_Jump, critical_error,
     input logic [XLEN-1:0] IF_pc, IF_pc_imm, EX_pc_4, ID_pc_imm, EX_pc_imm, rs1_imm,
     output logic [XLEN-1:0] IF_pc_4,
     output logic [XLEN-1:0] next_pc,
@@ -20,82 +20,87 @@ module Fetch (
         EX_Flush = 0;
         next_pc = IF_pc_4;
 
-        // IF Branches/Jumps
+        if (critical_error) next_pc = IF_pc; // Freeze pipeline for critical error raised on double trap exception
+        else begin
 
-        if (IF_BTBhit) begin // If target address found in BTB for given instruction
+            // IF Branches/Jumps
 
-            if (IF_Branch) begin // Conditional branch based on prediction
+            if (IF_BTBhit) begin // If target address found in BTB for given instruction
 
-                if (IF_branch_prediction == weak_taken || IF_branch_prediction == strong_taken) next_pc = IF_pc_imm;
+                if (IF_Branch) begin // Conditional branch based on prediction
 
-            end
-
-            else if (IF_Jump) next_pc = IF_pc_imm; // Unconditional jump
-            
-        end
-
-        // ID Branches/Jumps
-
-        if ((ID_Branch || ID_Jump) && !ID_BTBhit) begin // If decoded instruction is a branch or jump and the BTB doesn't yet have the target address stored
-
-            if (ID_Branch) begin
-
-                if (ID_branch_prediction == weak_taken || ID_branch_prediction == strong_taken) begin
-
-                    next_pc = ID_pc_imm;
-                    ID_Flush = 1; // 1 cycle penalty for ID branches
+                    if (IF_branch_prediction == weak_taken || IF_branch_prediction == strong_taken) next_pc = IF_pc_imm;
 
                 end
 
-            end
-
-            // Jump Instruction Logic
-            else if (ID_Jump && ID_ALUSrc == 0) begin // If decoded instruction is JAL (otherwise, JALR is resolved in EX)
-
-                next_pc = ID_pc_imm; // JAL
-                ID_Flush = 1; // 1 cycle penalty for ID jumps
+                else if (IF_Jump) next_pc = IF_pc_imm; // Unconditional jump
                 
             end
 
-        end
+            // ID Branches/Jumps
 
-        // EX Branches/Jumps
+            if ((ID_Branch || ID_Jump) && !ID_BTBhit) begin // If decoded instruction is a branch or jump and the BTB doesn't yet have the target address stored
 
-        if (EX_Branch) begin
+                if (ID_Branch) begin
 
-            // Flush pipeline if prediction was incorrect
+                    if (ID_branch_prediction == weak_taken || ID_branch_prediction == strong_taken) begin
 
-            case (prediction_status)
+                        next_pc = ID_pc_imm;
+                        ID_Flush = 1; // 1 cycle penalty for ID branches
 
-                NT_T: begin
-
-                    next_pc = EX_pc_imm;
-                    ID_Flush = 1;
-                    EX_Flush = 1;
+                    end
 
                 end
 
-                T_NT: begin
+                // Jump Instruction Logic
+                else if (ID_Jump && ID_ALUSrc == 0) begin // If decoded instruction is JAL (otherwise, JALR is resolved in EX)
 
-                    next_pc = EX_pc_4;
-                    ID_Flush = 1;
-
+                    next_pc = ID_pc_imm; // JAL
+                    ID_Flush = 1; // 1 cycle penalty for ID jumps
+                    
                 end
+
+            end
+
+            // EX Branches/Jumps
+
+            if (EX_Branch) begin
+
+                // Flush pipeline if prediction was incorrect
+
+                case (prediction_status)
+
+                    NT_T: begin
+
+                        next_pc = EX_pc_imm;
+                        ID_Flush = 1;
+                        EX_Flush = 1;
+
+                    end
+
+                    T_NT: begin
+
+                        next_pc = EX_pc_4;
+                        ID_Flush = 1;
+
+                    end
+                    
+                    // For Verilator warnings
+                    default: begin
+                    end
+
+                endcase
+
+            end
+
+            else if (EX_Jump && EX_ALUSrc != 0) begin // JALR instruction
                 
-                // For Verilator warnings
-                default: begin
-                end
+                ID_Flush = 1;
+                EX_Flush = 1;
+                next_pc = rs1_imm & 32'hFFFFFFFE; // JALR, clear lsb to ensure target address is word aligned
+                
+            end
 
-            endcase
-
-        end
-
-        else if (EX_Jump && EX_ALUSrc != 0) begin // JALR instruction
-            
-            ID_Flush = 1;
-            EX_Flush = 1;
-            next_pc = rs1_imm & 32'hFFFFFFFE; // JALR, clear lsb to ensure target address is word aligned
-            
         end
 
     end

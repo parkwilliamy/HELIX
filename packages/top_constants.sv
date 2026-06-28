@@ -81,5 +81,18 @@ package top_constants;
 
     } csr_encoding;
 
+    typedef enum logic [5:0] { // Opcodes for different instruction types
+        INST_ADDR_MISALIGN = 0,
+        INST_ACC_FAULT = 1,
+        ILLEGAL_INST = 2,
+        BREAKPOINT = 3,
+        LOAD_ADDR_MISALIGN = 4,
+        LOAD_ACC_FAULT = 5,
+        STORE_ADDR_MISALIGN = 6,
+        STORE_ACC_FAULT = 7,
+        ENV_CALL = 11,
+        DBL_TRAP = 16
+    } exception_encoding;
+
 
 endpackage

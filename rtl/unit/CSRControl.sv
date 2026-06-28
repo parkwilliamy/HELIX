@@ -8,13 +8,10 @@ module CSRControl
     input logic [11:0] ID_csr_addr, WB_csr_addr,
     input logic [4:0] ID_rs1, ID_rd, WB_rs1,
     input logic [XLEN-1:0] WB_rs1_data, WB_csr_value,
-    input logic [63:0] mcycle, minstret,
-    input logic [XLEN-1:0] correct_predictions, total_predictions,
-    output logic ID_csr_write,
-    output logic [XLEN-1:0] csr_value, WB_csr_write_data
+    output logic [XLEN-1:0] WB_csr_write_data
 );
 
-    // This module handles CSR control for reads and writes
+    // This module handles CSR control for writes
     // Provides CSR value in ID stage
     // Sets control signals for CSR writes in WB stage
 
@@ -39,25 +36,7 @@ module CSRControl
 
             endcase
 
-        end
-
-        // Read Logic
-    
-        if (CSR && (ID_funct3[1:0] != 2'b01 || ID_rd != 5'b0)) begin // For CSRRW and CSRRWI, ignore reads to rd = x0
-            
-            case (ID_csr_addr)
-
-                MCYCLE: csr_value = (WB_csr_addr == ID_csr_addr) ? WB_csr_write_data : mcycle[31:0];
-                MINSTRET: csr_value = (WB_csr_addr == ID_csr_addr) ? WB_csr_write_data : minstret[31:0];;
-                CORRECT_PREDICTIONS: csr_value = (WB_csr_addr == ID_csr_addr) ? WB_csr_write_data : correct_predictions;
-                TOTAL_PREDICTIONS: csr_value = (WB_csr_addr == ID_csr_addr) ? WB_csr_write_data : total_predictions;
-                default: csr_value = 0;
-
-            endcase
-
-        end
-
-        else csr_value = 0;
+        end        
 
     end
 
