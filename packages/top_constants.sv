@@ -37,7 +37,7 @@ package top_constants;
 
         MVENDORID = 12'hF11,
         MARCHID = 12'hF12,
-        MIMPID = 12'hF13
+        MIMPID = 12'hF13,
         MHARTID = 12'hF14,
         MCONFIGPTR = 12'hF15,
 
@@ -75,9 +75,9 @@ package top_constants;
 
         // Machine Counter Setup
 
-        MCOUNTERINHIBIT = 12'h320,
+        MCOUNTINHIBIT = 12'h320,
         MHPMEVENT3 = 12'h323,
-        MHPMEVENT4 = 12'h324,
+        MHPMEVENT4 = 12'h324
 
     } csr_encoding;
 

@@ -108,8 +108,6 @@ module Core (
                  minstret, 
                  mhpmcounter3, 
                  mhpmcounter4, 
-                 mhpmevent3,
-                 mhpmevent4,
                  menvcfg,
                  mtime,
                  mtimecmp;
@@ -128,12 +126,14 @@ module Core (
                      mepc,
                      mcause,
                      mtval,
-                     mconfigptr;
+                     mconfigptr,
+                     mhpmevent3,
+                     mhpmevent4;
 
     logic [1:0] priv; // current privilege level
     logic [3:0] exception_status, exception_status_n; // bit vector encoding pipeline stages that contain exceptional instructions
-    logic [5:0] exception_code [3]; // Each entry stores corresponding trap code for pipeline stage
-    logic [5:0] exception_code_n [3];
+    logic [5:0] exception_code [4]; // Each entry stores corresponding trap code for pipeline stage
+    logic [5:0] exception_code_n [4];
     logic [3:0] interrupt_code;
     logic critical_error, TrapTaken; // Asserted if double trap occurs
     // MSB encodes exception/interrupt - lower 5 bits encode cause
@@ -193,6 +193,7 @@ module Core (
 
     ControlUnit INST2 (
         .opcode(ID_opcode),
+        .ID_PostFlush(ID_PostFlush),
         .ValidReg(ID_ValidReg),
         .ALUOp(ID_ALUOp),
         .RegSrc(ID_RegSrc),
@@ -210,6 +211,7 @@ module Core (
         .clk(clk),
         .rst_n(rst_n),
         .RegWrite(WB.RegWrite),
+        .exception_pending(exception_status[0]),
         .rs1(ID_rs1),
         .rs2(ID_rs2),
         .rd(WB.rd),
@@ -333,6 +335,10 @@ module Core (
         .ID_Jump(ID_Jump),
         .EX_Jump(EX.Jump),
         .critical_error(critical_error),
+        .exception_pending(exception_status[0]),
+        .ID_RegSrc(ID_RegSrc),
+        .ID_funct3(ID_funct3),
+        .ID_rs2(ID_rs2),
         .ID_ALUSrc(ID_ALUSrc),
         .EX_ALUSrc(EX.ALUSrc),
         .IF_pc(IF_pc),
@@ -341,10 +347,15 @@ module Core (
         .ID_pc_imm(ID_pc_imm),
         .EX_pc_imm(EX.pc_imm),
         .rs1_imm(EX_ALU_result),
+        .mtvec(mtvec),
+        .mepc(mepc),
+        .ID_funct7(ID_funct7),
         .IF_pc_4(IF_pc_4),
         .next_pc(next_pc),
         .ID_Flush(ID_Flush),
-        .EX_Flush(EX_Flush)
+        .EX_Flush(EX_Flush),
+        .MEM_Flush(MEM_Flush),
+        .WB_Flush(WB_Flush)
     );
 
 
@@ -419,19 +430,19 @@ module Core (
     // IF
 
     always_comb begin
-
-        if (IF_pc[1:0] != 2'b00) begin // Instruction address misaligned exception 
         
-            exception_status_n[3] = 1;  
-            exception_code_n[3] = 6'b0;
-
-        end
-
-        else if (IF_pc >= IMEM_END) begin // Instruction access fault exception
+        if (next_pc >= IMEM_END) begin // Instruction access fault exception
 
             exception_status_n[3] = 1; 
             exception_code_n[3] = 6'b1;
 
+        end
+        
+        else begin
+
+            exception_status_n[3] = 0;
+            exception_code_n[3] = 0;
+            
         end
 
     end
@@ -469,11 +480,18 @@ module Core (
             exception_code_n[2] = 6'd2;
 
         end
-        else if (ID_RegSrc == 4 && ID_funct3 == 0) begin
+        else if (ID_RegSrc == 4 && ID_funct3 == 0 && (ID_csr_addr == 12'h000 || ID_csr_addr == 12'h001)) begin
 
-            exception_status_n[2] = 1; // EBREAK/breakpoint or ECALL/environment call exception
-            exception_code_n[2] = ID_csr_addr ? 6'd3 : 6'd11;
+            exception_status_n[2] = 1; // ECALL (0x000) / EBREAK (0x001) only -- exclude MRET (0x302) and WFI (0x105)
+            exception_code_n[2] = (ID_csr_addr == 1) ? 6'd3 : 6'd11;
 
+        end
+
+        else begin
+
+            exception_status_n[2] = exception_status[3];
+            exception_code_n[2] = exception_code[3];
+            
         end
 
     end
@@ -523,11 +541,12 @@ module Core (
     always_comb begin
 
         // Flush and a stall bubble both inject a NOP
-        if (EX_Flush || ID_Stall)
+        if (EX_Flush || ID_Stall) begin
             EX_n = '0;
             exception_status_n[1] = 0;
             exception_code_n[1] = 0;
-        else
+        end
+        else begin
             EX_n = '{
                 pc: ID_pc,
                 pc_4: ID_pc_4,
@@ -557,33 +576,51 @@ module Core (
                 CSR:ID_CSR
             };
 
-            if (EX.MemRead && EX_ALU_result[1:0] != 2'b00) begin // Load address misaligned exception
+            if (EX.MemRead && ((EX.funct3[1:0] == 2'b01 && EX_ALU_result[0] != 1'b0) ||
+                               (EX.funct3[1:0] == 2'b10 && EX_ALU_result[1:0] != 2'b00))) begin // Load address misaligned (lh/lhu need 2-byte, lw needs 4-byte; lb/lbu always ok)
 
                 exception_status_n[1] = 1;
                 exception_code_n[1] = 6'd4;
 
             end
-
-            else if (EX.MemRead && EX_ALU_result < DMEM_START || EX_ALU_result >= DMEM_END) begin // Load access fault exception
+            
+            else if (EX.MemRead && EX_ALU_result >= DMEM_END) begin // Load access fault exception
 
                 exception_status_n[1] = 1;
                 exception_code_n[1] = 6'd5;
 
             end
-
-            else if (EX.MemWrite && EX_ALU_result[1:0] != 2'b00) begin // Store address misaligned exception
+            
+            else if (EX.MemWrite && ((EX.funct3[1:0] == 2'b01 && EX_ALU_result[0] != 1'b0) ||
+                                     (EX.funct3[1:0] == 2'b10 && EX_ALU_result[1:0] != 2'b00))) begin // Store address misaligned (sh needs 2-byte, sw needs 4-byte; sb always ok)
 
                 exception_status_n[1] = 1;
                 exception_code_n[1] = 6'd6;
 
             end
-
-            else if (EX.MemWrite && EX_ALU_result < DMEM_START || EX_ALU_result >= DMEM_END) begin // Store access fault exception
+            
+            else if (EX.MemWrite && EX_ALU_result >= DMEM_END) begin // Store access fault exception
 
                 exception_status_n[1] = 1;
                 exception_code_n[1] = 6'd7;
 
             end
+
+            else if (next_pc[1:0] != 2'b00) begin // Instruction address misaligned exception 
+        
+                exception_status_n[1] = 1;  
+                exception_code_n[1] = 6'b0;
+
+            end
+            
+            else begin
+
+                exception_status_n[1] = exception_status[2];
+                exception_code_n[1] = exception_code[2];
+                
+            end
+
+        end
 
     end
 
@@ -626,12 +663,8 @@ module Core (
 
     always_comb begin
 
-        if (MEM_Flush) begin
-
-            exception_status_n[0] = 0;
-            exception_code_n[0] = 0;
-
-        end
+        exception_status_n[0] = MEM_Flush ? 0 : exception_status[1];
+        exception_code_n[0] = MEM_Flush ? 0 : exception_code[1];
 
     end
 
@@ -711,45 +744,35 @@ module Core (
 
     always_comb begin
 
-        ID_Flush = exception_status[0] || critical_error;
-        EX_Flush = exception_status[0] || critical_error;
-        MEM_Flush = exception_status[0] || critical_error;
-        WB_Flush = exception_status[0] || critical_error;
-
-        // Implement WFI instruction as NOP
-
-        if (ID_RegSrc == 4 && ID_rs2 == 5'b00101) EX_Flush = 1;
-        else EX_Flush = 0;
-
         // CSR read logic
 
         if (ID_CSR && (ID_funct3[1:0] != 2'b01 || ID_rd != 5'b0)) begin // For CSRRW and CSRRWI, ignore reads to rd = x0
             
             case (ID_csr_addr)
 
-                MISA: ID_csr_value = (WB_csr_addr == ID_csr_addr) ? WB_csr_write_data : misa;
+                MISA: ID_csr_value = (WB.csr_addr == ID_csr_addr) ? WB_csr_write_data : misa;
                 MVENDORID, MARCHID, MIMPID, MHARTID, MCONFIGPTR, MENVCFG, MENVCFGH: ID_csr_value = 0; // Read only 0 registers
-                MSTATUS: ID_csr_value = (WB_csr_addr == ID_csr_addr) ? WB_csr_write_data : mstatus[31:0];
-                MSTATUSH: ID_csr_value = (WB_csr_addr == ID_csr_addr) ? WB_csr_write_data : mstatus[63:32];
-                MTVEC: ID_csr_value = (WB_csr_addr == ID_csr_addr) ? WB_csr_write_data : mtvec;
-                MIP: ID_csr_value = (WB_csr_addr == ID_csr_addr) ? WB_csr_write_data : mip;
-                MIE: ID_csr_value = (WB_csr_addr == ID_csr_addr) ? WB_csr_write_data : mie;
-                MCYCLE: ID_csr_value = (WB_csr_addr == ID_csr_addr) ? WB_csr_write_data : mcycle[31:0];
-                MCYCLEH: ID_csr_value = (WB_csr_addr == ID_csr_addr) ? WB_csr_write_data : mcycle[63:32];
-                MINSTRET: ID_csr_value = (WB_csr_addr == ID_csr_addr) ? WB_csr_write_data : minstret[31:0];
-                MINSTRETH: ID_csr_value = (WB_csr_addr == ID_csr_addr) ? WB_csr_write_data : minstret[63:32];
-                MHPMCOUNTER3: ID_csr_value = (WB_csr_addr == ID_csr_addr) ? WB_csr_write_data : mhpmcounter3[31:0];
-                MHPMCOUNTER3H: ID_csr_value = (WB_csr_addr == ID_csr_addr) ? WB_csr_write_data : mhpmcounter3[63:32];
-                MHPMCOUNTER4: ID_csr_value = (WB_csr_addr == ID_csr_addr) ? WB_csr_write_data : mhpmcounter4[31:0];
-                MHPMCOUNTER4H: ID_csr_value = (WB_csr_addr == ID_csr_addr) ? WB_csr_write_data : mhpmcounter4[63:32];
-                MHPMEVENT3: ID_csr_value = (WB_csr_addr == ID_csr_addr) ? WB_csr_write_data : mhpmevent3;  
-                MHPMEVENT4: ID_csr_value = (WB_csr_addr == ID_csr_addr) ? WB_csr_write_data : mhpmevent4;
-                MCOUNTEREN: ID_csr_value = (WB_csr_addr == ID_csr_addr) ? WB_csr_write_data : mcounteren;
-                MCOUNTINHIBIT: ID_csr_value = (WB_csr_addr == ID_csr_addr) ? WB_csr_write_data : mcountinhibit;
-                MSCRATCH: ID_csr_value = (WB_csr_addr == ID_csr_addr) ? WB_csr_write_data : mscratch;
-                MEPC: ID_csr_value = (WB_csr_addr == ID_csr_addr) ? WB_csr_write_data : mepc;
-                MCAUSE: ID_csr_value = (WB_csr_addr == ID_csr_addr) ? WB_csr_write_data : mcause;
-                MTVAL: ID_csr_value = (WB_csr_addr == ID_csr_addr) ? WB_csr_write_data : mtval;
+                MSTATUS: ID_csr_value = (WB.csr_addr == ID_csr_addr) ? WB_csr_write_data : mstatus[31:0];
+                MSTATUSH: ID_csr_value = (WB.csr_addr == ID_csr_addr) ? WB_csr_write_data : mstatus[63:32];
+                MTVEC: ID_csr_value = (WB.csr_addr == ID_csr_addr) ? WB_csr_write_data : mtvec;
+                MIP: ID_csr_value = (WB.csr_addr == ID_csr_addr) ? WB_csr_write_data : mip;
+                MIE: ID_csr_value = (WB.csr_addr == ID_csr_addr) ? WB_csr_write_data : mie;
+                MCYCLE: ID_csr_value = (WB.csr_addr == ID_csr_addr) ? WB_csr_write_data : mcycle[31:0];
+                MCYCLEH: ID_csr_value = (WB.csr_addr == ID_csr_addr) ? WB_csr_write_data : mcycle[63:32];
+                MINSTRET: ID_csr_value = (WB.csr_addr == ID_csr_addr) ? WB_csr_write_data : minstret[31:0];
+                MINSTRETH: ID_csr_value = (WB.csr_addr == ID_csr_addr) ? WB_csr_write_data : minstret[63:32];
+                MHPMCOUNTER3: ID_csr_value = (WB.csr_addr == ID_csr_addr) ? WB_csr_write_data : mhpmcounter3[31:0];
+                MHPMCOUNTER3H: ID_csr_value = (WB.csr_addr == ID_csr_addr) ? WB_csr_write_data : mhpmcounter3[63:32];
+                MHPMCOUNTER4: ID_csr_value = (WB.csr_addr == ID_csr_addr) ? WB_csr_write_data : mhpmcounter4[31:0];
+                MHPMCOUNTER4H: ID_csr_value = (WB.csr_addr == ID_csr_addr) ? WB_csr_write_data : mhpmcounter4[63:32];
+                MHPMEVENT3: ID_csr_value = (WB.csr_addr == ID_csr_addr) ? WB_csr_write_data : mhpmevent3;  
+                MHPMEVENT4: ID_csr_value = (WB.csr_addr == ID_csr_addr) ? WB_csr_write_data : mhpmevent4;
+                MCOUNTEREN: ID_csr_value = (WB.csr_addr == ID_csr_addr) ? WB_csr_write_data : mcounteren;
+                MCOUNTINHIBIT: ID_csr_value = (WB.csr_addr == ID_csr_addr) ? WB_csr_write_data : mcountinhibit;
+                MSCRATCH: ID_csr_value = (WB.csr_addr == ID_csr_addr) ? WB_csr_write_data : mscratch;
+                MEPC: ID_csr_value = (WB.csr_addr == ID_csr_addr) ? WB_csr_write_data : mepc;
+                MCAUSE: ID_csr_value = (WB.csr_addr == ID_csr_addr) ? WB_csr_write_data : mcause;
+                MTVAL: ID_csr_value = (WB.csr_addr == ID_csr_addr) ? WB_csr_write_data : mtval;
                 default: ID_csr_value = 0;
 
             endcase
@@ -769,10 +792,10 @@ module Core (
             marchid <= 0;
             mimpid <= 0;
             mhartid <= 0;
-            mstatus <= 32'h1800;
+            mstatus <= 64'h1800;
             mtvec <= 0;
             mip <= 0;
-            mie <= 32'80; // Only enable timer interrupts
+            mie <= 32'h80; // Only enable timer interrupts
             mcycle <= 0;
             minstret <= 0;
             mhpmcounter3 <= 0; // Correct branch prediction counter
@@ -780,7 +803,7 @@ module Core (
             mhpmevent3 <= 1; 
             mhpmevent4 <= 2;
             mcounteren <= 32'h1F; // Enable hpm4, hpm3, instret, time, cycles counters
-            mcountinhibit <= 32'h1F;
+            mcountinhibit <= 32'hFFFFFFE0;
             mscratch <= 0;
             mepc <= 0;
             mcause <= 0;
@@ -788,7 +811,7 @@ module Core (
             mconfigptr <= 0;
             menvcfg <= 0;
             mtime <= 0;
-            mtimecmp <= 32'hFFFFFFFF;
+            mtimecmp <= 64'hFFFFFFFFFFFFFFFF;
             priv <= 2'b11;
             exception_status <= 4'b0;
 
@@ -804,21 +827,21 @@ module Core (
         end else begin
 
             // Default counting behavior
-            if (mcountinhibit[0]) mcycle <= mcycle + 1;
-            if (mcountinhibit[1]) mtime <= mtime + 1;
+            if (!mcountinhibit[0]) mcycle <= mcycle + 1;
+            if (!mcountinhibit[1]) mtime <= mtime + 1;
 
-            if (WB.ValidReg != 3'b000 && mcountinhibit[2]) minstret <= minstret + 1;
+            if (WB.ValidReg != 3'b000 && !mcountinhibit[2]) minstret <= minstret + 1;
 
             if (EX.Branch) begin
 
-                if (mhpmevent4 == 2 && mcountinhibit[4]) mhpmcounter4 <= mhpmcounter4 + 1;
-                if (mhpmevent3 == 2 && mcountinhibit[3]) mhpmcounter3 <= mhpmcounter3 + 1;
+                if (mhpmevent4 == 2 && !mcountinhibit[4]) mhpmcounter4 <= mhpmcounter4 + 1;
+                if (mhpmevent3 == 2 && !mcountinhibit[3]) mhpmcounter3 <= mhpmcounter3 + 1;
                 
                 // prediction_status 2 and 3 indicate a correct prediction
                 if (EX_prediction_status == 2 || EX_prediction_status == 3) begin
                     
-                    if (mhpmevent3 == 1 && mcountinhibit[3]) mhpmcounter3 <= mhpmcounter3 + 1;
-                    if (mhpmevent4 == 1 && mcountinhibit[4]) mhpmcounter4 <= mhpmcounter3 + 1;
+                    if (mhpmevent3 == 1 && !mcountinhibit[3]) mhpmcounter3 <= mhpmcounter3 + 1;
+                    if (mhpmevent4 == 1 && !mcountinhibit[4]) mhpmcounter4 <= mhpmcounter4 + 1;
             
                 end
 
@@ -835,7 +858,7 @@ module Core (
                     MSTATUSH: mstatus[42] <= WB_csr_write_data[10]; // MDT only writeable field
                     MTVEC: mtvec <= WB_csr_write_data;
                     MIP: mip[7] <= WB_csr_write_data[7];
-                    MIE: mie[7] <= WB_csr_write_data;
+                    MIE: mie[7] <= WB_csr_write_data[7];
                     MCYCLE: mcycle[31:0] <= WB_csr_write_data; 
                     MCYCLEH: mcycle[63:32] <= WB_csr_write_data;
                     MINSTRET: minstret[31:0] <= WB_csr_write_data;
@@ -873,13 +896,13 @@ module Core (
 
             if (exception_status[0]) begin
 
-                mepc <= WB_pc;
+                mepc <= WB.pc;
                 mcause <= {1'b0, 25'b0, exception_code[0]};
                 priv <= 2'b11;
-                IF_pc <= mtvec;
                 case (exception_code[0])
 
                     INST_ADDR_MISALIGN, LOAD_ADDR_MISALIGN, STORE_ADDR_MISALIGN: mtval <= WB.ALU_result; // write misaligned address to mtval
+                    BREAKPOINT: mtval <= WB.pc; // EBREAK: mtval = PC of the ebreak instruction
                     default: mtval <= 0;
 
                 endcase
@@ -900,12 +923,11 @@ module Core (
 
             // Exception return / mret logic
 
-            if (ID_RegSrc == 4 && ID_funct7 == 7'b0011000) begin
+            if (ID_RegSrc == 4 && ID_funct7 == 7'b0011000 && ID_funct3 == 3'b000) begin
 
                 mstatus[3] <= mstatus[7]; // Set MIE to MPIE
                 priv <= 2'b11;
                 mstatus[12:11] <= 2'b11; // Set previous privilege to machine mode
-                IF_pc <= mepc; // Restore PC to where exception initially occured
 
             end
 
@@ -926,10 +948,9 @@ module Core (
 
             if (exception_status == 0 && mip[7]) begin // If no pending exceptions and timer interrupts pending
 
-                mepc <= WB_pc;
-                mcause <= {1'b0, 25'b0, interrupt_code};
+                mepc <= WB.pc;
+                mcause <= {1'b0, 27'b0, interrupt_code};
                 priv <= 2'b11;
-                IF_pc <= mtvec;
                 TrapTaken <= 1;
 
             end
@@ -950,7 +971,7 @@ module Core (
 
             if (MEM.MemWrite && web_io != 4'b0) begin // If instruction in MEM is a store and IO write is enabled
 
-                case (MEM.ALU_result[ADDR_WIDTH-1:0])
+                case (MEM.ALU_result)
 
                     MTIME: begin
 
@@ -1001,7 +1022,7 @@ module Core (
 
             if (MEM.MemRead && MEM_io) begin // If instruction in MEM is a load from IO space
 
-                case (MEM.ALU_result[ADDR_WIDTH-1:0])
+                case (MEM.ALU_result)
 
                     MTIME: WB_io_data <= mtime[31:0];
 
@@ -1011,7 +1032,7 @@ module Core (
 
                     MTIMECMP+4: WB_io_data <= mtimecmp[63:32];
 
-                    LEDS[ADDR_WIDTH-1:0]: WB_io_data <= {16'b0, led}; // IO read returns current register state
+                    LEDS: WB_io_data <= {16'b0, led}; // IO read returns current register state
 
                     default: begin // Verilator
                     end

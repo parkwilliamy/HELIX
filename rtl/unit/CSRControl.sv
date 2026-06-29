@@ -8,6 +8,7 @@ module CSRControl
     input logic [11:0] ID_csr_addr, WB_csr_addr,
     input logic [4:0] ID_rs1, ID_rd, WB_rs1,
     input logic [XLEN-1:0] WB_rs1_data, WB_csr_value,
+    output logic ID_csr_write,
     output logic [XLEN-1:0] WB_csr_write_data
 );
 
@@ -37,6 +38,8 @@ module CSRControl
             endcase
 
         end        
+
+        else WB_csr_write_data = 0;
 
     end
 
