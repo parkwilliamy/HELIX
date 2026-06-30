@@ -694,7 +694,7 @@ module Core (
                     pc: EX.pc,
                     pc_4: EX.pc_4,
                     // JALR carries its (bit-0-cleared) target here so a misaligned-fetch
-                    // trap can read the faulting target from pc_imm uniformly with branch/JAL.
+                    // trap handler can read the faulting target in mtval from pc_imm uniformly with branch/JAL.
                     pc_imm: (EX.Jump && EX.ALUSrc != 2'b00) ? (EX_ALU_result & 32'hFFFFFFFE) : EX.pc_imm,
                     funct3: EX.funct3,
                     ValidReg: EX.ValidReg,
