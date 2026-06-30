@@ -291,7 +291,7 @@ module Core (
 
     Store INST9 (
         .MemWrite(MEM.MemWrite),
-        .exception_pending(exception_status[0]),
+        .exception_status(exception_status),
         .addrb(MEM.ALU_result),
         .rs2_data(MEM_rs2_data_final),
         .funct3(MEM.funct3),
@@ -335,7 +335,8 @@ module Core (
         .ID_Jump(ID_Jump),
         .EX_Jump(EX.Jump),
         .critical_error(critical_error),
-        .exception_pending(exception_status[0]),
+        .ID_Stall(ID_Stall),
+        .exception_status(exception_status),
         .ID_RegSrc(ID_RegSrc),
         .ID_funct3(ID_funct3),
         .ID_rs2(ID_rs2),
@@ -467,7 +468,7 @@ module Core (
 
     always_comb begin
 
-        if (ID_Flush) begin
+        if (exception_status[0]) begin
 
             exception_status_n[2] = 0;
             exception_code_n[2] = 0;
@@ -540,11 +541,9 @@ module Core (
 
     always_comb begin
 
-        // Flush and a stall bubble both inject a NOP
+        // Flush and a stall bubble both inject a NOP into EX
         if (EX_Flush || ID_Stall) begin
             EX_n = '0;
-            exception_status_n[1] = 0;
-            exception_code_n[1] = 0;
         end
         else begin
             EX_n = '{
@@ -575,50 +574,63 @@ module Core (
                 csr_value: ID_csr_value,
                 CSR:ID_CSR
             };
+        end
 
-            if (EX.MemRead && ((EX.funct3[1:0] == 2'b01 && EX_ALU_result[0] != 1'b0) ||
-                               (EX.funct3[1:0] == 2'b10 && EX_ALU_result[1:0] != 2'b00))) begin // Load address misaligned (lh/lhu need 2-byte, lw needs 4-byte; lb/lbu always ok)
+        if (exception_status[0]) begin 
 
-                exception_status_n[1] = 1;
-                exception_code_n[1] = 6'd4;
+            exception_status_n[1] = 0;
+            exception_code_n[1] = 0;
 
-            end
-            
-            else if (EX.MemRead && EX_ALU_result >= DMEM_END) begin // Load access fault exception
+        end
 
-                exception_status_n[1] = 1;
-                exception_code_n[1] = 6'd5;
+        else if (EX.MemRead && ((EX.funct3[1:0] == 2'b01 && EX_ALU_result[0] != 1'b0) ||
+                                (EX.funct3[1:0] == 2'b10 && EX_ALU_result[1:0] != 2'b00))) begin // Load address misaligned (lh/lhu need 2-byte, lw needs 4-byte; lb/lbu always ok)
 
-            end
-            
-            else if (EX.MemWrite && ((EX.funct3[1:0] == 2'b01 && EX_ALU_result[0] != 1'b0) ||
-                                     (EX.funct3[1:0] == 2'b10 && EX_ALU_result[1:0] != 2'b00))) begin // Store address misaligned (sh needs 2-byte, sw needs 4-byte; sb always ok)
+            exception_status_n[1] = 1;
+            exception_code_n[1] = 6'd4;
 
-                exception_status_n[1] = 1;
-                exception_code_n[1] = 6'd6;
+        end
 
-            end
-            
-            else if (EX.MemWrite && EX_ALU_result >= DMEM_END) begin // Store access fault exception
+        else if (EX.MemRead && EX_ALU_result >= DMEM_END) begin // Load access fault exception
 
-                exception_status_n[1] = 1;
-                exception_code_n[1] = 6'd7;
+            exception_status_n[1] = 1;
+            exception_code_n[1] = 6'd5;
 
-            end
+        end
 
-            else if (next_pc[1:0] != 2'b00) begin // Instruction address misaligned exception 
-        
-                exception_status_n[1] = 1;  
-                exception_code_n[1] = 6'b0;
+        else if (EX.MemWrite && ((EX.funct3[1:0] == 2'b01 && EX_ALU_result[0] != 1'b0) ||
+                                 (EX.funct3[1:0] == 2'b10 && EX_ALU_result[1:0] != 2'b00))) begin // Store address misaligned (sh needs 2-byte, sw needs 4-byte; sb always ok)
 
-            end
-            
-            else begin
+            exception_status_n[1] = 1;
+            exception_code_n[1] = 6'd6;
 
-                exception_status_n[1] = exception_status[2];
-                exception_code_n[1] = exception_code[2];
-                
-            end
+        end
+
+        else if (EX.MemWrite && EX_ALU_result >= DMEM_END) begin // Store access fault exception
+
+            exception_status_n[1] = 1;
+            exception_code_n[1] = 6'd7;
+
+        end
+
+        else if (((EX.Branch && EX_branch_taken) || (EX.Jump && EX.ALUSrc == 2'b00)) && EX.pc_imm[1:0] != 2'b00) begin // Taken branch / JAL to a misaligned target
+
+            exception_status_n[1] = 1;
+            exception_code_n[1] = 6'd0;
+
+        end
+
+        else if (EX.Jump && EX.ALUSrc != 2'b00 && EX_ALU_result[1] != 1'b0) begin // JALR to a misaligned target (hardware clears bit 0, so only bit 1 misaligns)
+
+            exception_status_n[1] = 1;
+            exception_code_n[1] = 6'd0;
+
+        end
+
+        else begin
+
+            exception_status_n[1] = exception_status[2];
+            exception_code_n[1] = exception_code[2];
 
         end
 
@@ -663,8 +675,8 @@ module Core (
 
     always_comb begin
 
-        exception_status_n[0] = MEM_Flush ? 0 : exception_status[1];
-        exception_code_n[0] = MEM_Flush ? 0 : exception_code[1];
+        exception_status_n[0] = exception_status[0] ? 0 : exception_status[1];
+        exception_code_n[0] = exception_status[0] ? 0 : exception_code[1];
 
     end
 
@@ -681,7 +693,9 @@ module Core (
                 MEM <= '{
                     pc: EX.pc,
                     pc_4: EX.pc_4,
-                    pc_imm: EX.pc_imm,
+                    // JALR carries its (bit-0-cleared) target here so a misaligned-fetch
+                    // trap can read the faulting target from pc_imm uniformly with branch/JAL.
+                    pc_imm: (EX.Jump && EX.ALUSrc != 2'b00) ? (EX_ALU_result & 32'hFFFFFFFE) : EX.pc_imm,
                     funct3: EX.funct3,
                     ValidReg: EX.ValidReg,
                     RegSrc: EX.RegSrc,
@@ -901,7 +915,8 @@ module Core (
                 priv <= 2'b11;
                 case (exception_code[0])
 
-                    INST_ADDR_MISALIGN, LOAD_ADDR_MISALIGN, STORE_ADDR_MISALIGN: mtval <= WB.ALU_result; // write misaligned address to mtval
+                    INST_ADDR_MISALIGN: mtval <= WB.pc_imm; // misaligned branch/jump target address
+                    LOAD_ADDR_MISALIGN, STORE_ADDR_MISALIGN: mtval <= WB.ALU_result; // misaligned load/store data address
                     BREAKPOINT: mtval <= WB.pc; // EBREAK: mtval = PC of the ebreak instruction
                     default: mtval <= 0;
 
@@ -928,6 +943,7 @@ module Core (
                 mstatus[3] <= mstatus[7]; // Set MIE to MPIE
                 priv <= 2'b11;
                 mstatus[12:11] <= 2'b11; // Set previous privilege to machine mode
+                TrapTaken <= 0;
 
             end
 

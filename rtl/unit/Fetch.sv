@@ -5,9 +5,10 @@ import branch_constants::*;
 
 module Fetch (
     input logic [1:0] IF_branch_prediction, ID_branch_prediction, prediction_status, ID_ALUSrc, EX_ALUSrc,
-    input logic IF_BTBhit, ID_BTBhit, IF_Branch, IF_Jump, ID_Branch, EX_Branch, ID_Jump, EX_Jump, critical_error, exception_pending,
-    input [2:0] ID_RegSrc, ID_funct3,
-    input [4:0] ID_rs2,
+    input logic IF_BTBhit, ID_BTBhit, IF_Branch, IF_Jump, ID_Branch, EX_Branch, ID_Jump, EX_Jump, critical_error, ID_Stall,
+    input logic [3:0] exception_status,
+    input logic [2:0] ID_RegSrc, ID_funct3,
+    input logic [4:0] ID_rs2,
     input logic [XLEN-1:0] IF_pc, IF_pc_imm, EX_pc_4, ID_pc_imm, EX_pc_imm, rs1_imm, mtvec, mepc,
     input logic [6:0] ID_funct7,
     output logic [XLEN-1:0] IF_pc_4,
@@ -20,16 +21,16 @@ module Fetch (
     always_comb begin
 
         next_pc = IF_pc_4;
-        ID_Flush = exception_pending || critical_error;
-        EX_Flush = exception_pending || critical_error || (ID_RegSrc == 4 && ID_rs2 == 5'b00101 && ID_funct3 == 3'b000); // Implement WFI instruction as NOP
-        MEM_Flush = exception_pending || critical_error;
-        WB_Flush = exception_pending || critical_error;
+        ID_Flush = exception_status[0] || critical_error;
+        EX_Flush = exception_status[0] || critical_error || (ID_RegSrc == 4 && ID_rs2 == 5'b00101 && ID_funct3 == 3'b000); // Implement WFI instruction as NOP
+        MEM_Flush = exception_status[0] || critical_error;
+        WB_Flush = exception_status[0] || critical_error;
 
         if (critical_error) next_pc = IF_pc; // Freeze pipeline for critical error raised on double trap exception
-        else if (exception_pending) next_pc = mtvec; // Write trap handler address to PC
+        else if (exception_status[0]) next_pc = mtvec; // Write trap handler address to PC
         else if (ID_RegSrc == 4 && ID_funct7 == 7'b0011000 && ID_funct3 == 3'b000) next_pc = mepc; // Restore PC to where exception initially occured
 
-        else begin
+        else if (exception_status == 0) begin
 
             // IF Branches/Jumps
 
@@ -47,7 +48,7 @@ module Fetch (
 
             // ID Branches/Jumps
 
-            if ((ID_Branch || ID_Jump) && !ID_BTBhit) begin // If decoded instruction is a branch or jump and the BTB doesn't yet have the target address stored
+            if ((ID_Branch || ID_Jump) && !ID_BTBhit && !ID_Stall) begin // Branch/jump in ID redirects (and asserts ID_Flush) -- but NOT while load-use stalled: the stall holds the branch in ID, so a self-generated ID_Flush would evict it before it can resolve. It redirects the cycle after the stall clears.
 
                 if (ID_Branch) begin
 

@@ -4,7 +4,8 @@ import top_constants::*;
 import mem_constants::*;
 
 module Store (
-    input logic MemWrite, exception_pending,
+    input logic MemWrite, 
+    input logic [3:0] exception_status,
     input logic [XLEN-1:0] addrb, rs2_data,
     input logic [2:0] funct3,
     output logic [3:0] web_final,
@@ -19,7 +20,7 @@ module Store (
         web_final = 0;
         dib = 0;
 
-        if (MemWrite && !exception_pending) begin
+        if (MemWrite && exception_status == 0) begin
 
             case (funct3) 
 
