@@ -135,7 +135,7 @@ module Core (
     logic [5:0] exception_code [4]; // Each entry stores corresponding trap code for pipeline stage
     logic [5:0] exception_code_n [4];
     logic [3:0] interrupt_code;
-    logic critical_error, TrapTaken; // Asserted if double trap occurs
+    logic critical_error, misaligned_fetch, TrapTaken; // Asserted if double trap occurs
     // MSB encodes exception/interrupt - lower 5 bits encode cause
 
     // CPI = mcycle / minstret
@@ -193,7 +193,6 @@ module Core (
 
     ControlUnit INST2 (
         .opcode(ID_opcode),
-        .ID_PostFlush(ID_PostFlush),
         .ValidReg(ID_ValidReg),
         .ALUOp(ID_ALUOp),
         .RegSrc(ID_RegSrc),
@@ -336,6 +335,7 @@ module Core (
         .EX_Jump(EX.Jump),
         .critical_error(critical_error),
         .ID_Stall(ID_Stall),
+        .misaligned_fetch(misaligned_fetch),
         .exception_status(exception_status),
         .ID_RegSrc(ID_RegSrc),
         .ID_funct3(ID_funct3),
@@ -580,6 +580,7 @@ module Core (
 
             exception_status_n[1] = 0;
             exception_code_n[1] = 0;
+            misaligned_fetch = 0;
 
         end
 
@@ -588,6 +589,7 @@ module Core (
 
             exception_status_n[1] = 1;
             exception_code_n[1] = 6'd4;
+            misaligned_fetch = 0;
 
         end
 
@@ -595,6 +597,7 @@ module Core (
 
             exception_status_n[1] = 1;
             exception_code_n[1] = 6'd5;
+            misaligned_fetch = 0;
 
         end
 
@@ -603,6 +606,7 @@ module Core (
 
             exception_status_n[1] = 1;
             exception_code_n[1] = 6'd6;
+            misaligned_fetch = 0;
 
         end
 
@@ -610,6 +614,7 @@ module Core (
 
             exception_status_n[1] = 1;
             exception_code_n[1] = 6'd7;
+            misaligned_fetch = 0;
 
         end
 
@@ -617,6 +622,7 @@ module Core (
 
             exception_status_n[1] = 1;
             exception_code_n[1] = 6'd0;
+            misaligned_fetch = 1;
 
         end
 
@@ -624,6 +630,7 @@ module Core (
 
             exception_status_n[1] = 1;
             exception_code_n[1] = 6'd0;
+            misaligned_fetch = 1;
 
         end
 
@@ -631,6 +638,7 @@ module Core (
 
             exception_status_n[1] = exception_status[2];
             exception_code_n[1] = exception_code[2];
+            misaligned_fetch = 0;
 
         end
 
@@ -912,6 +920,7 @@ module Core (
 
                 mepc <= WB.pc;
                 mcause <= {1'b0, 25'b0, exception_code[0]};
+                mstatus[42] <= 1;
                 priv <= 2'b11;
                 case (exception_code[0])
 
@@ -927,7 +936,7 @@ module Core (
 
             // Double trap handling
 
-            if (mstatus[42] && TrapTaken) begin // if MDT and trap taken, double trap exception occurs
+            if (mstatus[42] && exception_status[0]) begin // if MDT and trap taken, double trap exception occurs
 
                 mstatus[12:11] <= 2'b11; // Set previous privilege to machine mode
                 mstatus[7] <= mstatus[3]; // Set MPIE to MIE
@@ -941,15 +950,19 @@ module Core (
             if (ID_RegSrc == 4 && ID_funct7 == 7'b0011000 && ID_funct3 == 3'b000) begin
 
                 mstatus[3] <= mstatus[7]; // Set MIE to MPIE
+                mstatus[42] <= 0; // Set MDT to 0
                 priv <= 2'b11;
                 mstatus[12:11] <= 2'b11; // Set previous privilege to machine mode
                 TrapTaken <= 0;
+                
 
             end
 
             // Timer Interrupt
 
             if (mstatus[3]) begin // If interrupts enabled 
+
+                mstatus[42] <= 1;
 
                 if (mie[7]) begin // If timer interrupts enabled
 

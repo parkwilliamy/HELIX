@@ -28,7 +28,8 @@ package top_constants;
         OP_U_LUI = 7'b0110111,
         OP_U_AUIPC = 7'b0010111,
         OP_J = 7'b1101111,
-        OP_SYSTEM = 7'b1110011
+        OP_SYSTEM = 7'b1110011,
+        NOP = 7'b0000000
     } opcode_encoding;
 
     typedef enum logic [11:0] { // Addresses for different CSRs
