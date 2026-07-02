@@ -246,7 +246,7 @@ module Core (
     );
 
     assign ID_pc_imm = ID_pc + ID_imm;
-    assign BTBwrite = ID_Jump || ID_Branch;
+    assign BTBwrite = (ID_Jump && ID_ALUOp == 0) || ID_Branch;
 
     CSRControl INST7 (
         .CSR(ID_CSR),
@@ -447,7 +447,7 @@ module Core (
 
     always_comb begin
         
-        if (next_pc >= IMEM_END) begin // Instruction access fault exception
+        if (!exception_status[0] && next_pc >= IMEM_END) begin // Instruction access fault exception
 
             exception_status_n[3] = 1;
             exception_code_n[3] = INST_ACC_FAULT;
@@ -671,7 +671,7 @@ module Core (
         if (!rst_n) begin
 
             gh <= 0;
-            for (int i = 0; i < BHTsize; i = i+1) BHT[i] <= 2'b01;
+            for (int i = 0; i < BHTsize; i = i+1) BHT[i] <= weak_not_taken;
 
         end else if (EX.Branch) begin
 
@@ -803,6 +803,23 @@ module Core (
                 exception_code[i] <= exception_status_n[i] ? exception_code_n[i] : exception_code[i+1];
                 exception_status[i] <= exception_status_n[i];
 
+            end
+
+            if (ID_Flush) begin
+                exception_status[3] <= 0;
+                exception_code[3] <= 0;
+            end
+            if (EX_Flush) begin
+                exception_status[2] <= 0;
+                exception_code[2] <= 0;
+            end
+            if (MEM_Flush) begin
+                exception_status[1] <= 0;
+                exception_code[1] <= 0;
+            end
+            if (WB_Flush) begin
+                exception_status[0] <= 0;
+                exception_code[0] <= 0;
             end
 
             // Double trap handling

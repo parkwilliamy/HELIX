@@ -1,0 +1,52 @@
+[*]
+[*] GTKWave Analyzer v3.3.104 (w)1999-2020 BSI
+[*] Thu Jul  2 21:53:36 2026
+[*]
+[dumpfile] "/home/parkw/R500/compliance/dump.vcd"
+[dumpfile_mtime] "Thu Jul  2 21:37:57 2026"
+[dumpfile_size] 1485840990
+[savefile] "/home/parkw/R500/compliance/exception_tests.gtkw"
+[timestart] 855
+[size] 1908 975
+[pos] -1 -1
+*-4.409513 890 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] TOP.
+[treeopen] TOP.top_tb.
+[sst_width] 214
+[signals_width] 206
+[sst_expanded] 1
+[sst_vpaned_height] 283
+@28
+TOP.clk
+TOP.rst_n
+@22
+TOP.top_tb.INST2.IF_pc[31:0]
+@28
+[color] 1
+TOP.top_tb.INST2.trap_entry
+[color] 3
+TOP.top_tb.INST2.trap_active
+@22
+TOP.top_tb.INST2.exception_code[0][5:0]
+@28
+TOP.top_tb.INST2.ID_Stall
+@22
+TOP.top_tb.INST2.ID_instruction[31:0]
+TOP.top_tb.INST2.ID_imm[31:0]
+TOP.top_tb.INST2.ID_pc_imm[31:0]
+TOP.top_tb.INST2.ID_rs1_data[31:0]
+@28
+TOP.top_tb.INST2.ID_Flush
+TOP.top_tb.INST2.EX_Flush
+@22
+TOP.top_tb.INST2.next_pc[31:0]
+TOP.top_tb.INST2.IF_pc_4[31:0]
+TOP.top_tb.INST2.mepc[31:0]
+@24
+TOP.top_tb.INST2.ID_RegSrc[2:0]
+@22
+TOP.top_tb.INST2.IF_pc_imm[31:0]
+@29
+TOP.top_tb.INST2.ID_Jump
+[pattern_trace] 1
+[pattern_trace] 0
