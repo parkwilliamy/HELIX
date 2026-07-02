@@ -97,7 +97,7 @@ module BTB
     always_comb begin
 
         way_found = 0;
-        victim_idx = 'x;
+        victim_idx = 0;
 
         if (write) begin   
 

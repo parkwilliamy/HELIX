@@ -145,15 +145,6 @@ module MemAccess (
                     end
 
                 end
-
-                default: begin
-
-                    word_idx <= 'x;
-                    TX_data <= 'x;
-                    TX_enable <= 'x;
-                    addrb <= 'x;
-
-                end
                
             endcase
 
@@ -220,8 +211,6 @@ module MemAccess (
                 else next_state = READ_5;
 
             end
-
-            default: next_state = 'x;
 
         endcase
 

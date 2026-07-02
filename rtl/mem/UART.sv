@@ -137,13 +137,6 @@ module UART (
 
                 end
 
-                default: begin
-
-                    byte_done <= 'x;
-                    TX <= 'x;
-
-                end
-
             endcase
 
             if (baud_count == MAX_COUNT-1) begin
@@ -229,8 +222,6 @@ module UART (
                 else next_state = STOP_TX;
 
             end
-
-            default: next_state = 'x;
 
         endcase
 
