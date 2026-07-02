@@ -103,44 +103,21 @@ module Core (
 
     // ********************************************************************************************************  CONTROL AND STATUS REGISTERS *****************************************************************************************************************
 
-    logic [63:0] mstatus, 
-                 mcycle, 
-                 minstret, 
-                 mhpmcounter3, 
-                 mhpmcounter4, 
-                 menvcfg,
-                 mtime,
-                 mtimecmp;
+    logic [63:0] mtime, mtimecmp; // memory mapped timer registers
 
-    logic [XLEN-1:0] misa, 
-                     mvendorid, 
-                     marchid, 
-                     mimpid, 
-                     mhartid,
-                     mtvec,
-                     mip,
-                     mie,
-                     mcounteren,
-                     mcountinhibit,
-                     mscratch,
-                     mepc,
-                     mcause,
-                     mtval,
-                     mconfigptr,
-                     mhpmevent3,
-                     mhpmevent4;
+    logic [XLEN-1:0] mtvec, mepc; // CSR state exported by the CSRFile
+    logic mstatus_mie, mstatus_mdt, mie_mtie, trap_active, mtime_inhibit;
 
-    logic [1:0] priv; // current privilege level
     logic [3:0] exception_status, exception_status_n; // bit vector encoding pipeline stages that contain exceptional instructions
     logic [5:0] exception_code [4]; // Each entry stores corresponding trap code for pipeline stage
     logic [5:0] exception_code_n [4];
     logic critical_error; // Asserted if double trap occurs
     logic misaligned_fetch;
-    logic trap_active; // Set on trap handler entry, cleared by mret
-    logic interrupt_taken, trap_entry;
+    logic interrupt_taken, trap_entry, mtip, mret;
 
-    assign mip = {24'b0, mtime >= mtimecmp, 7'b0}; // MTIP mirrors the timer compare and clears when mtimecmp is rearmed
-    assign interrupt_taken = mstatus[3] && mie[7] && mip[7] && !trap_active && exception_status == 0 && exception_status_n[2:0] == 0 && WB.ValidReg != 3'b000; // Take a pending timer interrupt once no exception is in flight (IF is excluded since that fetch is redirected) and WB holds a real instruction for mepc
+    assign mtip = mtime >= mtimecmp; // MTIP mirrors the timer compare and clears when mtimecmp is rearmed
+    assign mret = ID_RegSrc == 4 && ID_funct7 == 7'b0011000 && ID_funct3 == 3'b000;
+    assign interrupt_taken = mstatus_mie && mie_mtie && mtip && !trap_active && exception_status == 0 && exception_status_n[2:0] == 0 && WB.ValidReg != 3'b000; // Take a pending timer interrupt once no exception is in flight (IF is excluded since that fetch is redirected) and WB holds a real instruction for mepc
     assign trap_entry = exception_status[0] || interrupt_taken; // Trap handler entry for an exception or an interrupt
 
     // CPI = mcycle / minstret
@@ -224,12 +201,43 @@ module Core (
         .rs2_data(ID_rs2_data)
     );
 
-    ImmGen INST4 (
+     // Architectural CSR state and trap-entry updates live in the CSRFile; the exception pipeline below decides when traps commit
+
+    CSRFile INST4 (
+        .clk(clk),
+        .rst_n(rst_n),
+        .csr_read(ID_CSR && (ID_funct3[1:0] != 2'b01 || ID_rd != 5'b0)), // For CSRRW and CSRRWI, ignore reads to rd = x0
+        .ID_csr_addr(ID_csr_addr),
+        .ID_csr_value(ID_csr_value),
+        .csr_write(WB.csr_write && !interrupt_taken), // Suppressed on interrupt entry -- the instruction in WB is flushed and re-executed after mret
+        .WB_csr_addr(WB.csr_addr),
+        .WB_csr_write_data(WB_csr_write_data),
+        .instret_event(WB.ValidReg != 3'b000),
+        .branch_event(EX.Branch),
+        .prediction_correct(EX_prediction_status == NT_NT || EX_prediction_status == T_T), // prediction_status 2 and 3 indicate a correct prediction
+        .trap_entry(trap_entry),
+        .trap_exception(exception_status[0]),
+        .trap_code(exception_code[0]),
+        .WB_pc(WB.pc),
+        .WB_pc_imm(WB.pc_imm),
+        .WB_ALU_result(WB.ALU_result),
+        .mret(mret),
+        .mtip(mtip),
+        .mtvec(mtvec),
+        .mepc(mepc),
+        .mstatus_mie(mstatus_mie),
+        .mstatus_mdt(mstatus_mdt),
+        .mie_mtie(mie_mtie),
+        .trap_active(trap_active),
+        .mtime_inhibit(mtime_inhibit)
+    );
+
+    ImmGen INST5 (
         .instruction(ID_instruction),
         .imm(ID_imm)
     );
 
-    ALUControl INST5 (
+    ALUControl INST6 (
         .sub_bit(ID_funct7[5]),
         .funct3(ID_funct3),
         .ALUOp(ID_ALUOp),
@@ -240,7 +248,7 @@ module Core (
     assign ID_pc_imm = ID_pc + ID_imm;
     assign BTBwrite = ID_Jump || ID_Branch;
 
-    CSRControl INST6 (
+    CSRControl INST7 (
         .CSR(ID_CSR),
         .WB_csr_write(WB.csr_write),
         .ID_funct3(ID_funct3),
@@ -263,7 +271,7 @@ module Core (
     assign EX_op2 = (EX.ALUSrc == 2'b00) ? EX_rs2_data_final :
                     (EX.ALUSrc == 2'b01) ? EX.imm : EX.csr_value;
 
-    ALU INST7 (
+    ALU INST8 (
         .op1(EX_op1),
         .op2(EX_op2),
         .field(EX.field),
@@ -276,7 +284,7 @@ module Core (
 
     // Branch Resolution Unit compares prediction with actual branch result, yielding a prediction status that indicates whether the prediction was correct or not
 
-    BRU INST8 (
+    BRU INST9 (
         .EX_branch_prediction(EX.branch_prediction),
         .EX_Branch(EX.Branch),
         .zero(EX_zero),
@@ -293,7 +301,7 @@ module Core (
 
     assign addrb = MEM.ALU_result[ADDR_WIDTH-1:0];
 
-    Store INST9 (
+    Store INST10 (
         .MemWrite(MEM.MemWrite),
         .exception_status(exception_status),
         .interrupt_taken(interrupt_taken),
@@ -313,7 +321,7 @@ module Core (
 
     assign DMEM_word_final = WB.io ? WB_io_data : dob; // Select between reading IO register state or data word from memory
 
-    WriteBack INST10 (
+    WriteBack INST11 (
         .ALU_result(WB.ALU_result),
         .pc_imm(WB.pc_imm),
         .pc_4(WB.pc_4),
@@ -327,7 +335,7 @@ module Core (
     // Fetch Unit fetches next PC based on prediction status and control signals
     // Flushes the pipeline for incorrect predictions
 
-    Fetch INST11 (
+    Fetch INST12 (
         .IF_branch_prediction(IF_branch_prediction),
         .ID_branch_prediction(ID_branch_prediction),
         .prediction_status(EX_prediction_status),
@@ -375,7 +383,7 @@ module Core (
     // 2) WB -> EX
     // 3) WB -> MEM
 
-    ForwardUnit INST12 (
+    ForwardUnit INST13 (
         .MEM_ALU_result(MEM.ALU_result),
         .MEM_pc_4(MEM.pc_4),
         .MEM_pc_imm(MEM.pc_imm),
@@ -420,7 +428,7 @@ module Core (
 
     // Stall Unit freezes the pipeline for load-use hazards
 
-    StallUnit INST13 (
+    StallUnit INST14 (
         .EX_MemRead(EX.MemRead),
         .ID_MemWrite(ID_MemWrite),
         .EX_CSR(EX.CSR),
@@ -769,76 +777,12 @@ module Core (
 
     end
 
-    // CSR registers and exception handling
-
-    always_comb begin
-
-        // CSR read logic
-
-        if (ID_CSR && (ID_funct3[1:0] != 2'b01 || ID_rd != 5'b0)) begin // For CSRRW and CSRRWI, ignore reads to rd = x0
-            
-            case (ID_csr_addr)
-
-                MISA: ID_csr_value = (WB.csr_addr == ID_csr_addr) ? WB_csr_write_data : misa;
-                MVENDORID, MARCHID, MIMPID, MHARTID, MCONFIGPTR, MENVCFG, MENVCFGH: ID_csr_value = 0; // Read only 0 registers
-                MSTATUS: ID_csr_value = (WB.csr_addr == ID_csr_addr) ? WB_csr_write_data : mstatus[31:0];
-                MSTATUSH: ID_csr_value = (WB.csr_addr == ID_csr_addr) ? WB_csr_write_data : mstatus[63:32];
-                MTVEC: ID_csr_value = (WB.csr_addr == ID_csr_addr) ? WB_csr_write_data : mtvec;
-                MIP: ID_csr_value = mip; // MTIP is read-only, so CSR writes never land and are not forwarded
-                MIE: ID_csr_value = (WB.csr_addr == ID_csr_addr) ? WB_csr_write_data : mie;
-                MCYCLE: ID_csr_value = (WB.csr_addr == ID_csr_addr) ? WB_csr_write_data : mcycle[31:0];
-                MCYCLEH: ID_csr_value = (WB.csr_addr == ID_csr_addr) ? WB_csr_write_data : mcycle[63:32];
-                MINSTRET: ID_csr_value = (WB.csr_addr == ID_csr_addr) ? WB_csr_write_data : minstret[31:0];
-                MINSTRETH: ID_csr_value = (WB.csr_addr == ID_csr_addr) ? WB_csr_write_data : minstret[63:32];
-                MHPMCOUNTER3: ID_csr_value = (WB.csr_addr == ID_csr_addr) ? WB_csr_write_data : mhpmcounter3[31:0];
-                MHPMCOUNTER3H: ID_csr_value = (WB.csr_addr == ID_csr_addr) ? WB_csr_write_data : mhpmcounter3[63:32];
-                MHPMCOUNTER4: ID_csr_value = (WB.csr_addr == ID_csr_addr) ? WB_csr_write_data : mhpmcounter4[31:0];
-                MHPMCOUNTER4H: ID_csr_value = (WB.csr_addr == ID_csr_addr) ? WB_csr_write_data : mhpmcounter4[63:32];
-                MHPMEVENT3: ID_csr_value = (WB.csr_addr == ID_csr_addr) ? WB_csr_write_data : mhpmevent3;  
-                MHPMEVENT4: ID_csr_value = (WB.csr_addr == ID_csr_addr) ? WB_csr_write_data : mhpmevent4;
-                MCOUNTEREN: ID_csr_value = (WB.csr_addr == ID_csr_addr) ? WB_csr_write_data : mcounteren;
-                MCOUNTINHIBIT: ID_csr_value = (WB.csr_addr == ID_csr_addr) ? WB_csr_write_data : mcountinhibit;
-                MSCRATCH: ID_csr_value = (WB.csr_addr == ID_csr_addr) ? WB_csr_write_data : mscratch;
-                MEPC: ID_csr_value = (WB.csr_addr == ID_csr_addr) ? WB_csr_write_data : mepc;
-                MCAUSE: ID_csr_value = (WB.csr_addr == ID_csr_addr) ? WB_csr_write_data : mcause;
-                MTVAL: ID_csr_value = (WB.csr_addr == ID_csr_addr) ? WB_csr_write_data : mtval;
-                default: ID_csr_value = 0;
-
-            endcase
-
-        end
-
-        else ID_csr_value = 0;
-
-    end
+    // Exception status pipeline and double trap tracking
 
     always_ff @ (posedge clk) begin
 
         if (!rst_n) begin
 
-            misa <= {2'b11, 4'b0, 26'h400};
-            mvendorid <= 0;
-            marchid <= 0;
-            mimpid <= 0;
-            mhartid <= 0;
-            mstatus <= 64'h1800;
-            mtvec <= 0;
-            mie <= 32'h80; // Only enable timer interrupts
-            mcycle <= 0;
-            minstret <= 0;
-            mhpmcounter3 <= 0; // Correct branch prediction counter
-            mhpmcounter4 <= 0; // Total branch prediction counter
-            mhpmevent3 <= 1; 
-            mhpmevent4 <= 2;
-            mcounteren <= 32'h1F; // Enable hpm4, hpm3, instret, time, cycles counters
-            mcountinhibit <= 32'hFFFFFFE0;
-            mscratch <= 0;
-            mepc <= 0;
-            mcause <= 0;
-            mtval <= 0;
-            mconfigptr <= 0;
-            menvcfg <= 0;
-            priv <= 2'b11;
             exception_status <= 4'b0;
 
             for (int i = 0; i < 4; i++) begin
@@ -848,64 +792,8 @@ module Core (
             end
 
             critical_error <= 0;
-            trap_active <= 0;
 
         end else begin
-
-            // Default counting behavior
-            if (!mcountinhibit[0]) mcycle <= mcycle + 1;
-
-            if (WB.ValidReg != 3'b000 && !mcountinhibit[2]) minstret <= minstret + 1;
-
-            if (EX.Branch) begin
-
-                if (mhpmevent4 == 2 && !mcountinhibit[4]) mhpmcounter4 <= mhpmcounter4 + 1;
-                if (mhpmevent3 == 2 && !mcountinhibit[3]) mhpmcounter3 <= mhpmcounter3 + 1;
-                
-                // prediction_status 2 and 3 indicate a correct prediction
-                if (EX_prediction_status == NT_NT || EX_prediction_status == T_T) begin
-                    
-                    if (mhpmevent3 == 1 && !mcountinhibit[3]) mhpmcounter3 <= mhpmcounter3 + 1;
-                    if (mhpmevent4 == 1 && !mcountinhibit[4]) mhpmcounter4 <= mhpmcounter4 + 1;
-            
-                end
-
-            end
-
-            // CSR writes in WB override the default counting (later
-            // non-blocking assignment to the same target wins). Suppressed on
-            // interrupt entry -- the instruction in WB is flushed and re-executed after mret.
-            if (WB.csr_write && !interrupt_taken) begin
-
-                case (WB.csr_addr)
-
-                    MISA: {misa[25:5], misa[3:0]} <= {WB_csr_write_data[25:5], WB_csr_write_data[3:0]}; // MXL field and E bit read only
-                    MSTATUS: {mstatus[12:11], mstatus[7], mstatus[3]} <= {WB_csr_write_data[12:11], WB_csr_write_data[7], WB_csr_write_data[3]}; // MPP, MPIE, MIE only writeable fields
-                    MSTATUSH: mstatus[42] <= WB_csr_write_data[10]; // MDT only writeable field
-                    MTVEC: mtvec <= WB_csr_write_data;
-                    MIE: mie[7] <= WB_csr_write_data[7];
-                    MCYCLE: mcycle[31:0] <= WB_csr_write_data; 
-                    MCYCLEH: mcycle[63:32] <= WB_csr_write_data;
-                    MINSTRET: minstret[31:0] <= WB_csr_write_data;
-                    MINSTRETH: minstret[63:32] <= WB_csr_write_data;
-                    MHPMCOUNTER3: mhpmcounter3[31:0] <= WB_csr_write_data;
-                    MHPMCOUNTER3H: mhpmcounter3[63:32] <= WB_csr_write_data;
-                    MHPMCOUNTER4: mhpmcounter4[31:0] <= WB_csr_write_data;
-                    MHPMCOUNTER4H: mhpmcounter3[63:32] <= WB_csr_write_data;
-                    MHPMEVENT3: mhpmevent3 <= WB_csr_write_data;
-                    MHPMEVENT4: mhpmevent4 <= WB_csr_write_data;
-                    MCOUNTEREN: mcounteren <= WB_csr_write_data;
-                    MCOUNTINHIBIT: mcountinhibit <= WB_csr_write_data;
-                    MSCRATCH: mscratch <= WB_csr_write_data;
-                    MEPC: mepc <= WB_csr_write_data;
-                    MCAUSE: mcause <= WB_csr_write_data;
-                    MTVAL: mtval <= WB_csr_write_data;
-                    default: begin // For Verilator
-                    end
-
-                endcase
-
-            end
 
             exception_code[3] <= exception_status_n[3] ? exception_code_n[3] : 0;
             exception_status[3] <= exception_status_n[3];
@@ -917,49 +805,9 @@ module Core (
 
             end
 
-            // Trap handler entry -- capture trap state for an exception or interrupt and mask further interrupts until mret
-
-            if (trap_entry) begin
-
-                mepc <= WB.pc;
-                mcause <= exception_status[0] ? {1'b0, 25'b0, exception_code[0]} : {1'b1, 25'b0, TIMER_INT};
-                mstatus[42] <= 1; // Set MDT
-                mstatus[12:11] <= 2'b11; // Set previous privilege to machine mode
-                mstatus[7] <= mstatus[3]; // Set MPIE to MIE
-                mstatus[3] <= 0; // Set MIE to 0
-                priv <= 2'b11;
-                trap_active <= 1;
-
-                if (exception_status[0]) begin
-
-                    case (exception_code[0])
-
-                        INST_ADDR_MISALIGN: mtval <= WB.pc_imm; // misaligned branch/jump target address
-                        LOAD_ADDR_MISALIGN, STORE_ADDR_MISALIGN: mtval <= WB.ALU_result; // misaligned load/store data address
-                        BREAKPOINT: mtval <= WB.pc; // EBREAK: mtval = PC of the ebreak instruction
-                        default: mtval <= 0;
-
-                    endcase
-
-                end
-
-            end
-
             // Double trap handling
 
-            if (mstatus[42] && exception_status[0]) critical_error <= 1; // if MDT and trap taken, double trap exception occurs
-
-            // Exception return / mret logic
-
-            if (ID_RegSrc == 4 && ID_funct7 == 7'b0011000 && ID_funct3 == 3'b000) begin
-
-                mstatus[3] <= mstatus[7]; // Set MIE to MPIE
-                mstatus[42] <= 0; // Set MDT to 0
-                priv <= 2'b11;
-                mstatus[12:11] <= 2'b11; // Set previous privilege to machine mode
-                trap_active <= 0;
-
-            end
+            if (mstatus_mdt && exception_status[0]) critical_error <= 1; // if MDT and trap taken, double trap exception occurs
 
         end
 
@@ -977,7 +825,7 @@ module Core (
 
         end else begin
 
-            if (!mcountinhibit[1]) mtime <= mtime + 1;
+            if (!mtime_inhibit) mtime <= mtime + 1;
 
             if (MEM.MemWrite && web_io != 4'b0) begin // If instruction in MEM is a store and IO write is enabled
 
