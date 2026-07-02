@@ -6,14 +6,12 @@ import mem_constants::*;
 module Store (
     input logic MemWrite, interrupt_taken,
     input logic [3:0] exception_status,
-    input logic [XLEN-1:0] addrb, rs2_data,
+    input logic [1:0] byte_offset, 
+    input logic [XLEN-1:0] rs2_data,
     input logic [2:0] funct3,
     output logic [3:0] web_final,
     output logic [XLEN-1:0] dib
 );
-
-    logic [1:0] byte_offset;
-    assign byte_offset = addrb[1:0];
 
     always_comb begin
 
