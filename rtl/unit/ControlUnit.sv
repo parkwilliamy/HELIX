@@ -126,22 +126,6 @@ module ControlUnit (
 
             end
 
-            NOP: begin
-
-                ALUOp = 0;
-                RegSrc = 0;
-                ALUSrc = 0;
-                RegWrite = 0;
-                MemRead = 0;
-                MemWrite = 0;
-                Branch = 0;
-                Jump = 0;
-                Valid = 1; 
-                ValidReg = 0;
-                CSR = 0;
-
-            end
-
             default: begin
 
                 ALUOp = 0;

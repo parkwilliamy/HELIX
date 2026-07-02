@@ -134,9 +134,14 @@ module Core (
     logic [3:0] exception_status, exception_status_n; // bit vector encoding pipeline stages that contain exceptional instructions
     logic [5:0] exception_code [4]; // Each entry stores corresponding trap code for pipeline stage
     logic [5:0] exception_code_n [4];
-    logic [3:0] interrupt_code;
-    logic critical_error, misaligned_fetch, TrapTaken; // Asserted if double trap occurs
-    // MSB encodes exception/interrupt - lower 5 bits encode cause
+    logic critical_error; // Asserted if double trap occurs
+    logic misaligned_fetch;
+    logic trap_active; // Set on trap handler entry, cleared by mret
+    logic interrupt_taken, trap_entry;
+
+    assign mip = {24'b0, mtime >= mtimecmp, 7'b0}; // MTIP mirrors the timer compare and clears when mtimecmp is rearmed
+    assign interrupt_taken = mstatus[3] && mie[7] && mip[7] && !trap_active && exception_status == 0 && exception_status_n[2:0] == 0 && WB.ValidReg != 3'b000; // Take a pending timer interrupt once no exception is in flight (IF is excluded since that fetch is redirected) and WB holds a real instruction for mepc
+    assign trap_entry = exception_status[0] || interrupt_taken; // Trap handler entry for an exception or an interrupt
 
     // CPI = mcycle / minstret
     // Branch Predictor Accuracy = correct_predictions / total_predictions
@@ -210,7 +215,7 @@ module Core (
         .clk(clk),
         .rst_n(rst_n),
         .RegWrite(WB.RegWrite),
-        .exception_pending(exception_status[0]),
+        .trap_entry(trap_entry),
         .rs1(ID_rs1),
         .rs2(ID_rs2),
         .rd(WB.rd),
@@ -291,6 +296,7 @@ module Core (
     Store INST9 (
         .MemWrite(MEM.MemWrite),
         .exception_status(exception_status),
+        .interrupt_taken(interrupt_taken),
         .addrb(MEM.ALU_result),
         .rs2_data(MEM_rs2_data_final),
         .funct3(MEM.funct3),
@@ -336,6 +342,7 @@ module Core (
         .critical_error(critical_error),
         .ID_Stall(ID_Stall),
         .misaligned_fetch(misaligned_fetch),
+        .trap_entry(trap_entry),
         .exception_status(exception_status),
         .ID_RegSrc(ID_RegSrc),
         .ID_funct3(ID_funct3),
@@ -434,8 +441,8 @@ module Core (
         
         if (next_pc >= IMEM_END) begin // Instruction access fault exception
 
-            exception_status_n[3] = 1; 
-            exception_code_n[3] = 6'b1;
+            exception_status_n[3] = 1;
+            exception_code_n[3] = INST_ACC_FAULT;
 
         end
         
@@ -458,7 +465,7 @@ module Core (
 
         else begin
 
-            if (!ID_Stall) IF_pc <= next_pc;
+            if (!ID_Stall || trap_entry) IF_pc <= next_pc; // Trap entry overrides a stall -- the stalled instructions are flushed and refetched after mret
 
         end
 
@@ -475,16 +482,16 @@ module Core (
 
         end
 
-        else if (!ID_Valid) begin
+        else if (!ID_Valid && !ID_PostFlush) begin // Illegal opcode exception -- flush bubbles decode as invalid but are not instructions
 
-            exception_status_n[2] = 1; // Illegal opcode exception
-            exception_code_n[2] = 6'd2;
+            exception_status_n[2] = 1;
+            exception_code_n[2] = ILLEGAL_INST;
 
         end
         else if (ID_RegSrc == 4 && ID_funct3 == 0 && (ID_csr_addr == 12'h000 || ID_csr_addr == 12'h001)) begin
 
             exception_status_n[2] = 1; // ECALL (0x000) / EBREAK (0x001) only -- exclude MRET (0x302) and WFI (0x105)
-            exception_code_n[2] = (ID_csr_addr == 1) ? 6'd3 : 6'd11;
+            exception_code_n[2] = (ID_csr_addr == 1) ? BREAKPOINT : ENV_CALL;
 
         end
 
@@ -588,15 +595,15 @@ module Core (
                                 (EX.funct3[1:0] == 2'b10 && EX_ALU_result[1:0] != 2'b00))) begin // Load address misaligned (lh/lhu need 2-byte, lw needs 4-byte; lb/lbu always ok)
 
             exception_status_n[1] = 1;
-            exception_code_n[1] = 6'd4;
+            exception_code_n[1] = LOAD_ADDR_MISALIGN;
             misaligned_fetch = 0;
 
         end
 
-        else if (EX.MemRead && EX_ALU_result >= DMEM_END) begin // Load access fault exception
+        else if (EX.MemRead && EX_ALU_result >= IO_END) begin // Load access fault exception
 
             exception_status_n[1] = 1;
-            exception_code_n[1] = 6'd5;
+            exception_code_n[1] = LOAD_ACC_FAULT;
             misaligned_fetch = 0;
 
         end
@@ -605,15 +612,15 @@ module Core (
                                  (EX.funct3[1:0] == 2'b10 && EX_ALU_result[1:0] != 2'b00))) begin // Store address misaligned (sh needs 2-byte, sw needs 4-byte; sb always ok)
 
             exception_status_n[1] = 1;
-            exception_code_n[1] = 6'd6;
+            exception_code_n[1] = STORE_ADDR_MISALIGN;
             misaligned_fetch = 0;
 
         end
 
-        else if (EX.MemWrite && EX_ALU_result >= DMEM_END) begin // Store access fault exception
+        else if (EX.MemWrite && EX_ALU_result >= IO_END) begin // Store access fault exception
 
             exception_status_n[1] = 1;
-            exception_code_n[1] = 6'd7;
+            exception_code_n[1] = STORE_ACC_FAULT;
             misaligned_fetch = 0;
 
         end
@@ -621,7 +628,7 @@ module Core (
         else if (((EX.Branch && EX_branch_taken) || (EX.Jump && EX.ALUSrc == 2'b00)) && EX.pc_imm[1:0] != 2'b00) begin // Taken branch / JAL to a misaligned target
 
             exception_status_n[1] = 1;
-            exception_code_n[1] = 6'd0;
+            exception_code_n[1] = INST_ADDR_MISALIGN;
             misaligned_fetch = 1;
 
         end
@@ -629,7 +636,7 @@ module Core (
         else if (EX.Jump && EX.ALUSrc != 2'b00 && EX_ALU_result[1] != 1'b0) begin // JALR to a misaligned target (hardware clears bit 0, so only bit 1 misaligns)
 
             exception_status_n[1] = 1;
-            exception_code_n[1] = 6'd0;
+            exception_code_n[1] = INST_ADDR_MISALIGN;
             misaligned_fetch = 1;
 
         end
@@ -664,12 +671,12 @@ module Core (
 
             case (EX_prediction_status)
 
-                0: BHT[EX.BHTaddr] <= BHT[EX.BHTaddr] + 1;
-                1: BHT[EX.BHTaddr] <= BHT[EX.BHTaddr] - 1;
-                2: begin
+                NT_T: BHT[EX.BHTaddr] <= BHT[EX.BHTaddr] + 1;
+                T_NT: BHT[EX.BHTaddr] <= BHT[EX.BHTaddr] - 1;
+                NT_NT: begin
                     if (BHT[EX.BHTaddr] > 0) BHT[EX.BHTaddr] <= BHT[EX.BHTaddr] - 1;
                 end
-                3: begin
+                T_T: begin
                     if (BHT[EX.BHTaddr] < 3 && EX.branch_prediction > 1) BHT[EX.BHTaddr] <= BHT[EX.BHTaddr] + 1;
                 end
 
@@ -777,7 +784,7 @@ module Core (
                 MSTATUS: ID_csr_value = (WB.csr_addr == ID_csr_addr) ? WB_csr_write_data : mstatus[31:0];
                 MSTATUSH: ID_csr_value = (WB.csr_addr == ID_csr_addr) ? WB_csr_write_data : mstatus[63:32];
                 MTVEC: ID_csr_value = (WB.csr_addr == ID_csr_addr) ? WB_csr_write_data : mtvec;
-                MIP: ID_csr_value = (WB.csr_addr == ID_csr_addr) ? WB_csr_write_data : mip;
+                MIP: ID_csr_value = mip; // MTIP is read-only, so CSR writes never land and are not forwarded
                 MIE: ID_csr_value = (WB.csr_addr == ID_csr_addr) ? WB_csr_write_data : mie;
                 MCYCLE: ID_csr_value = (WB.csr_addr == ID_csr_addr) ? WB_csr_write_data : mcycle[31:0];
                 MCYCLEH: ID_csr_value = (WB.csr_addr == ID_csr_addr) ? WB_csr_write_data : mcycle[63:32];
@@ -816,7 +823,6 @@ module Core (
             mhartid <= 0;
             mstatus <= 64'h1800;
             mtvec <= 0;
-            mip <= 0;
             mie <= 32'h80; // Only enable timer interrupts
             mcycle <= 0;
             minstret <= 0;
@@ -832,8 +838,6 @@ module Core (
             mtval <= 0;
             mconfigptr <= 0;
             menvcfg <= 0;
-            mtime <= 0;
-            mtimecmp <= 64'hFFFFFFFFFFFFFFFF;
             priv <= 2'b11;
             exception_status <= 4'b0;
 
@@ -844,13 +848,12 @@ module Core (
             end
 
             critical_error <= 0;
-            TrapTaken <= 0;
+            trap_active <= 0;
 
         end else begin
 
             // Default counting behavior
             if (!mcountinhibit[0]) mcycle <= mcycle + 1;
-            if (!mcountinhibit[1]) mtime <= mtime + 1;
 
             if (WB.ValidReg != 3'b000 && !mcountinhibit[2]) minstret <= minstret + 1;
 
@@ -860,7 +863,7 @@ module Core (
                 if (mhpmevent3 == 2 && !mcountinhibit[3]) mhpmcounter3 <= mhpmcounter3 + 1;
                 
                 // prediction_status 2 and 3 indicate a correct prediction
-                if (EX_prediction_status == 2 || EX_prediction_status == 3) begin
+                if (EX_prediction_status == NT_NT || EX_prediction_status == T_T) begin
                     
                     if (mhpmevent3 == 1 && !mcountinhibit[3]) mhpmcounter3 <= mhpmcounter3 + 1;
                     if (mhpmevent4 == 1 && !mcountinhibit[4]) mhpmcounter4 <= mhpmcounter4 + 1;
@@ -870,8 +873,9 @@ module Core (
             end
 
             // CSR writes in WB override the default counting (later
-            // non-blocking assignment to the same target wins).
-            if (WB.csr_write) begin
+            // non-blocking assignment to the same target wins). Suppressed on
+            // interrupt entry -- the instruction in WB is flushed and re-executed after mret.
+            if (WB.csr_write && !interrupt_taken) begin
 
                 case (WB.csr_addr)
 
@@ -879,7 +883,6 @@ module Core (
                     MSTATUS: {mstatus[12:11], mstatus[7], mstatus[3]} <= {WB_csr_write_data[12:11], WB_csr_write_data[7], WB_csr_write_data[3]}; // MPP, MPIE, MIE only writeable fields
                     MSTATUSH: mstatus[42] <= WB_csr_write_data[10]; // MDT only writeable field
                     MTVEC: mtvec <= WB_csr_write_data;
-                    MIP: mip[7] <= WB_csr_write_data[7];
                     MIE: mie[7] <= WB_csr_write_data[7];
                     MCYCLE: mcycle[31:0] <= WB_csr_write_data; 
                     MCYCLEH: mcycle[63:32] <= WB_csr_write_data;
@@ -914,36 +917,37 @@ module Core (
 
             end
 
-            // Exception handling logic / Trap handler entry
+            // Trap handler entry -- capture trap state for an exception or interrupt and mask further interrupts until mret
 
-            if (exception_status[0]) begin
+            if (trap_entry) begin
 
                 mepc <= WB.pc;
-                mcause <= {1'b0, 25'b0, exception_code[0]};
-                mstatus[42] <= 1;
+                mcause <= exception_status[0] ? {1'b0, 25'b0, exception_code[0]} : {1'b1, 25'b0, TIMER_INT};
+                mstatus[42] <= 1; // Set MDT
+                mstatus[12:11] <= 2'b11; // Set previous privilege to machine mode
+                mstatus[7] <= mstatus[3]; // Set MPIE to MIE
+                mstatus[3] <= 0; // Set MIE to 0
                 priv <= 2'b11;
-                case (exception_code[0])
+                trap_active <= 1;
 
-                    INST_ADDR_MISALIGN: mtval <= WB.pc_imm; // misaligned branch/jump target address
-                    LOAD_ADDR_MISALIGN, STORE_ADDR_MISALIGN: mtval <= WB.ALU_result; // misaligned load/store data address
-                    BREAKPOINT: mtval <= WB.pc; // EBREAK: mtval = PC of the ebreak instruction
-                    default: mtval <= 0;
+                if (exception_status[0]) begin
 
-                endcase
-                TrapTaken <= 1;
+                    case (exception_code[0])
+
+                        INST_ADDR_MISALIGN: mtval <= WB.pc_imm; // misaligned branch/jump target address
+                        LOAD_ADDR_MISALIGN, STORE_ADDR_MISALIGN: mtval <= WB.ALU_result; // misaligned load/store data address
+                        BREAKPOINT: mtval <= WB.pc; // EBREAK: mtval = PC of the ebreak instruction
+                        default: mtval <= 0;
+
+                    endcase
+
+                end
 
             end
 
             // Double trap handling
 
-            if (mstatus[42] && exception_status[0]) begin // if MDT and trap taken, double trap exception occurs
-
-                mstatus[12:11] <= 2'b11; // Set previous privilege to machine mode
-                mstatus[7] <= mstatus[3]; // Set MPIE to MIE
-                mstatus[3] <= 0; // Set MIE to 0
-                critical_error <= 1; // Assert critical error
-
-            end
+            if (mstatus[42] && exception_status[0]) critical_error <= 1; // if MDT and trap taken, double trap exception occurs
 
             // Exception return / mret logic
 
@@ -953,34 +957,7 @@ module Core (
                 mstatus[42] <= 0; // Set MDT to 0
                 priv <= 2'b11;
                 mstatus[12:11] <= 2'b11; // Set previous privilege to machine mode
-                TrapTaken <= 0;
-                
-
-            end
-
-            // Timer Interrupt
-
-            if (mstatus[3]) begin // If interrupts enabled 
-
-                mstatus[42] <= 1;
-
-                if (mie[7]) begin // If timer interrupts enabled
-
-                    if (mtime >= mtimecmp) interrupt_code <= 4'd7;
-                    else if (mtime == 64'hFFFFFFFFFFFFFFFF) interrupt_code <= 4'd13;
-
-                    mip[7] <= 1;
-
-                end
-         
-            end
-
-            if (exception_status == 0 && mip[7]) begin // If no pending exceptions and timer interrupts pending
-
-                mepc <= WB.pc;
-                mcause <= {1'b0, 27'b0, interrupt_code};
-                priv <= 2'b11;
-                TrapTaken <= 1;
+                trap_active <= 0;
 
             end
 
@@ -994,9 +971,13 @@ module Core (
 
         if (!rst_n) begin
 
+            mtime <= 0;
+            mtimecmp <= 64'hFFFFFFFFFFFFFFFF;
             led <= 16'b0;
 
         end else begin
+
+            if (!mcountinhibit[1]) mtime <= mtime + 1;
 
             if (MEM.MemWrite && web_io != 4'b0) begin // If instruction in MEM is a store and IO write is enabled
 
@@ -1012,8 +993,8 @@ module Core (
 
                     MTIME+4: begin
 
-                        for (int i = 4; i < 8; i++) begin
-                            if (web_io[i]) mtime[8*i +:8] <= dib[8*i +:8]; 
+                        for (int i = 0; i < 4; i++) begin
+                            if (web_io[i]) mtime[8*i+32 +:8] <= dib[8*i +:8]; 
                         end
                         
                     end
@@ -1021,17 +1002,17 @@ module Core (
                     MTIMECMP: begin
 
                         for (int i = 0; i < 4; i++) begin
-                            if (web_io[i]) mtime[8*i +:8] <= dib[8*i +:8]; 
+                            if (web_io[i]) mtimecmp[8*i +:8] <= dib[8*i +:8];
                         end
-                        
+
                     end
 
                     MTIMECMP+4: begin
 
-                        for (int i = 4; i < 8; i++) begin
-                            if (web_io[i]) mtime[8*i +:8] <= dib[8*i +:8]; 
+                        for (int i = 0; i < 4; i++) begin
+                            if (web_io[i]) mtimecmp[8*i+32 +:8] <= dib[8*i +:8];
                         end
-                        
+
                     end
 
                     LEDS: begin

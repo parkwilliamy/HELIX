@@ -3,7 +3,7 @@
 import top_constants::*;
 
 module RegFile (
-    input logic clk, rst_n, RegWrite, exception_pending,
+    input logic clk, rst_n, RegWrite, trap_entry,
     input logic [4:0] rs1, rs2, rd,
     input logic [XLEN-1:0] rd_write_data,
     output logic [XLEN-1:0] rs1_data, rs2_data 
@@ -25,7 +25,7 @@ module RegFile (
 
         end
 
-        if (rd > 0 && RegWrite && !exception_pending) reg_file[rd] <= rd_write_data; // Ensure address written to is from 1-31 and RegWrite is HIGH
+        if (rd > 0 && RegWrite && !trap_entry) reg_file[rd] <= rd_write_data; // Ensure address written to is from 1-31 and RegWrite is HIGH
         
     end
     

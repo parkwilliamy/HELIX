@@ -11,6 +11,8 @@ package mem_constants;
                                 IMEM_END   = mem_large ? 32'h00200000 : 32'h00005000,
                                 DMEM_START = IMEM_END,
                                 DMEM_END   = mem_large ? 32'h00250000 : 32'h00007700,
+                                IO_START   = DMEM_END,
+                                IO_END     = mem_large ? 32'h00250200 : 32'h00008000,
                                 ADDR_WIDTH = $clog2(DMEM_END-IMEM_START);
 
     localparam MTIME = mem_large ? 32'h00250000 : 32'h00007750,

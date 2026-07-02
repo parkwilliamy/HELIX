@@ -95,5 +95,9 @@ package top_constants;
         DBL_TRAP = 16
     } exception_encoding;
 
+    typedef enum logic [5:0] { // mcause codes for interrupts (reported with the mcause MSB set)
+        TIMER_INT = 7
+    } interrupt_encoding;
+
 
 endpackage

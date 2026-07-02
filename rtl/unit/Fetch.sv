@@ -5,7 +5,7 @@ import branch_constants::*;
 
 module Fetch (
     input logic [1:0] IF_branch_prediction, ID_branch_prediction, prediction_status, ID_ALUSrc, EX_ALUSrc,
-    input logic IF_BTBhit, ID_BTBhit, IF_Branch, IF_Jump, ID_Branch, EX_Branch, ID_Jump, EX_Jump, critical_error, ID_Stall, misaligned_fetch,
+    input logic IF_BTBhit, ID_BTBhit, IF_Branch, IF_Jump, ID_Branch, EX_Branch, ID_Jump, EX_Jump, critical_error, ID_Stall, misaligned_fetch, trap_entry,
     input logic [3:0] exception_status,
     input logic [2:0] ID_RegSrc, ID_funct3,
     input logic [4:0] ID_rs2,
@@ -21,14 +21,19 @@ module Fetch (
     always_comb begin
 
         next_pc = IF_pc_4;
-        ID_Flush = exception_status[0] || critical_error;
-        EX_Flush = exception_status[0] || critical_error || (ID_RegSrc == 4 && ID_rs2 == 5'b00101 && ID_funct3 == 3'b000); // Implement WFI instruction as NOP
-        MEM_Flush = exception_status[0] || critical_error;
-        WB_Flush = exception_status[0] || critical_error;
+        ID_Flush = trap_entry || critical_error;
+        EX_Flush = trap_entry || critical_error || (ID_RegSrc == 4 && ID_rs2 == 5'b00101 && ID_funct3 == 3'b000); // Implement WFI instruction as NOP
+        MEM_Flush = trap_entry || critical_error;
+        WB_Flush = trap_entry || critical_error;
 
         if (critical_error) next_pc = IF_pc; // Freeze pipeline for critical error raised on double trap exception
-        else if (exception_status[0]) next_pc = mtvec; // Write trap handler address to PC
-        else if (ID_RegSrc == 4 && ID_funct7 == 7'b0011000 && ID_funct3 == 3'b000) next_pc = mepc; // Restore PC to where exception initially occured
+        else if (trap_entry) next_pc = mtvec; // Write trap handler address to PC
+        else if (ID_RegSrc == 4 && ID_funct7 == 7'b0011000 && ID_funct3 == 3'b000) begin
+
+            next_pc = mepc; // Restore PC to where exception initially occured
+            ID_Flush = 1; // 1 cycle penalty for mret -- squash the fall-through fetch
+
+        end
 
         else if (exception_status == 0 && !misaligned_fetch) begin
 

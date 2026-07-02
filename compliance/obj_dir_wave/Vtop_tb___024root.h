@@ -53,17 +53,19 @@ class alignas(VL_CACHE_LINE_BYTES) Vtop_tb___024root final : public VerilatedMod
         CData/*1:0*/ top_tb__DOT__INST2__DOT__priv;
         CData/*3:0*/ top_tb__DOT__INST2__DOT__exception_status;
         CData/*3:0*/ top_tb__DOT__INST2__DOT__exception_status_n;
-        CData/*3:0*/ top_tb__DOT__INST2__DOT__interrupt_code;
         CData/*0:0*/ top_tb__DOT__INST2__DOT__critical_error;
         CData/*0:0*/ top_tb__DOT__INST2__DOT__misaligned_fetch;
-        CData/*0:0*/ top_tb__DOT__INST2__DOT__TrapTaken;
+        CData/*0:0*/ top_tb__DOT__INST2__DOT__trap_active;
+        CData/*0:0*/ top_tb__DOT__INST2__DOT__interrupt_taken;
         CData/*7:0*/ top_tb__DOT__INST2__DOT__gh;
         CData/*0:0*/ top_tb__DOT__INST2__DOT__ID_PostFlush;
+        CData/*0:0*/ top_tb__DOT__INST2__DOT____VdfgRegularize_hdb8421e2_0_0;
         CData/*0:0*/ top_tb__DOT__INST2__DOT__INST1__DOT__write;
         CData/*1:0*/ top_tb__DOT__INST2__DOT__INST1__DOT__IF_lines_hit;
         CData/*1:0*/ top_tb__DOT__INST2__DOT__INST1__DOT__ID_lines_valid;
         CData/*0:0*/ top_tb__DOT__INST2__DOT__INST1__DOT__way_found;
         CData/*0:0*/ top_tb__DOT__INST2__DOT__INST1__DOT__victim_idx;
+        CData/*0:0*/ top_tb__DOT__INST2__DOT__INST3__DOT__trap_entry;
         CData/*6:0*/ top_tb__DOT__INST2__DOT__INST4__DOT__opcode;
         CData/*2:0*/ top_tb__DOT__INST2__DOT__INST4__DOT__funct3;
         CData/*0:0*/ top_tb__DOT__INST2__DOT__INST8__DOT__branch_taken_inter;
@@ -78,10 +80,10 @@ class alignas(VL_CACHE_LINE_BYTES) Vtop_tb___024root final : public VerilatedMod
         SData/*14:0*/ top_tb__DOT__addrb;
         SData/*15:0*/ top_tb__DOT__led;
         SData/*14:0*/ top_tb__DOT__INST2__DOT__addra;
-        SData/*11:0*/ top_tb__DOT__INST2__DOT__INST4__DOT__intimm1;
-        IData/*31:0*/ top_tb__DOT__doa;
     };
     struct {
+        SData/*11:0*/ top_tb__DOT__INST2__DOT__INST4__DOT__intimm1;
+        IData/*31:0*/ top_tb__DOT__doa;
         IData/*31:0*/ top_tb__DOT__dob;
         IData/*31:0*/ top_tb__DOT__dia;
         IData/*31:0*/ top_tb__DOT__dib;
@@ -119,7 +121,6 @@ class alignas(VL_CACHE_LINE_BYTES) Vtop_tb___024root final : public VerilatedMod
         IData/*31:0*/ top_tb__DOT__INST2__DOT__mimpid;
         IData/*31:0*/ top_tb__DOT__INST2__DOT__mhartid;
         IData/*31:0*/ top_tb__DOT__INST2__DOT__mtvec;
-        IData/*31:0*/ top_tb__DOT__INST2__DOT__mip;
         IData/*31:0*/ top_tb__DOT__INST2__DOT__mie;
         IData/*31:0*/ top_tb__DOT__INST2__DOT__mcounteren;
         IData/*31:0*/ top_tb__DOT__INST2__DOT__mcountinhibit;
@@ -145,9 +146,9 @@ class alignas(VL_CACHE_LINE_BYTES) Vtop_tb___024root final : public VerilatedMod
         IData/*31:0*/ top_tb__DOT__INST2__DOT__INST1__DOT__unnamedblk4__DOT__unnamedblk5__DOT__j;
         IData/*31:0*/ top_tb__DOT__INST2__DOT__INST3__DOT__unnamedblk1__DOT__i;
         IData/*19:0*/ top_tb__DOT__INST2__DOT__INST4__DOT__intimm2;
-        IData/*31:0*/ top_tb__DOT__INST2__DOT__INST4__DOT__imm1;
     };
     struct {
+        IData/*31:0*/ top_tb__DOT__INST2__DOT__INST4__DOT__imm1;
         IData/*31:0*/ top_tb__DOT__INST2__DOT__INST4__DOT__imm2;
         IData/*31:0*/ top_tb__DOT__INST2__DOT__INST4__DOT__imm3;
         IData/*31:0*/ top_tb__DOT__INST2__DOT__INST4__DOT__imm4;

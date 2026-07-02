@@ -4,7 +4,7 @@ import top_constants::*;
 import mem_constants::*;
 
 module Store (
-    input logic MemWrite, 
+    input logic MemWrite, interrupt_taken,
     input logic [3:0] exception_status,
     input logic [XLEN-1:0] addrb, rs2_data,
     input logic [2:0] funct3,
@@ -20,7 +20,7 @@ module Store (
         web_final = 0;
         dib = 0;
 
-        if (MemWrite && exception_status == 0) begin
+        if (MemWrite && exception_status == 0 && !interrupt_taken) begin // Suppress the store when a trap flushes it -- it re-executes after mret
 
             case (funct3) 
 

@@ -7,11 +7,8 @@ main:
 
     li s0, 0x1808
     csrw mstatus, s0
-    la t3, 0x7758
-    li t4, 0x37
-    sw t4, 0(t3)
-    sw x0, 4(t3)
-
+    ecall
+    lw x1, 1(x2)
     la t2, my_data # load tohost address in x5; tohost written to at end of program to halt
     
     j halt
@@ -101,8 +98,11 @@ halt:
     handle_interrupt:
         andi    t0, t0, 0x1f         # interrupt code
         #   7  machine timer interrupt   (MTIP)
+        #   13 counter overflow interrupt
         li      t2, 7
         beq     t0, t2, handle_timer
+        li      t2, 13
+        beq     t0, t2, handle_counter
         j       trap_exit
 
     handle_timer:
@@ -113,6 +113,13 @@ halt:
         sw t4, 4(t3)
         sw t4, 4(t2)
         j trap_exit
+
+    handle_counter:
+        la t2, my_data # load tohost address in x5; tohost written to at end of program to halt
+        li t3, 69
+        sw t3, 4(t2)
+        j trap_exit
+
 
     # ------------------------------------------------------------
     #  Common restore + return

@@ -20,8 +20,8 @@ class alignas(VL_CACHE_LINE_BYTES) Vtop_tb___024root final : public VerilatedMod
         VL_IN8(rst_n,0,0);
         CData/*3:0*/ top_tb__DOT__wea;
         CData/*3:0*/ top_tb__DOT__web;
-        CData/*7:0*/ top_tb__DOT__INST1__DOT____Vlvbound_h67f57f0a__0;
-        CData/*7:0*/ top_tb__DOT__INST1__DOT____Vlvbound_hfa028462__0;
+        CData/*7:0*/ top_tb__DOT__INST1__DOT____Vlvbound_hca8ea982__0;
+        CData/*7:0*/ top_tb__DOT__INST1__DOT____Vlvbound_h0f921f73__0;
         CData/*0:0*/ top_tb__DOT__INST2__DOT__BTBwrite;
         CData/*7:0*/ top_tb__DOT__INST2__DOT__IF_BHTaddr;
         CData/*1:0*/ top_tb__DOT__INST2__DOT__IF_branch_prediction;
@@ -37,9 +37,10 @@ class alignas(VL_CACHE_LINE_BYTES) Vtop_tb___024root final : public VerilatedMod
         CData/*3:0*/ top_tb__DOT__INST2__DOT__web_io;
         CData/*3:0*/ top_tb__DOT__INST2__DOT__exception_status;
         CData/*3:0*/ top_tb__DOT__INST2__DOT__exception_status_n;
-        CData/*3:0*/ top_tb__DOT__INST2__DOT__interrupt_code;
         CData/*0:0*/ top_tb__DOT__INST2__DOT__critical_error;
-        CData/*0:0*/ top_tb__DOT__INST2__DOT__TrapTaken;
+        CData/*0:0*/ top_tb__DOT__INST2__DOT__trap_active;
+        CData/*0:0*/ top_tb__DOT__INST2__DOT__interrupt_taken;
+        CData/*0:0*/ top_tb__DOT__INST2__DOT__trap_entry;
         CData/*7:0*/ top_tb__DOT__INST2__DOT__gh;
         CData/*0:0*/ top_tb__DOT__INST2__DOT__ID_PostFlush;
         CData/*1:0*/ top_tb__DOT__INST2__DOT__INST1__DOT__IF_lines_hit;
@@ -49,12 +50,12 @@ class alignas(VL_CACHE_LINE_BYTES) Vtop_tb___024root final : public VerilatedMod
         CData/*0:0*/ __VstlFirstIteration;
         CData/*0:0*/ __Vtrigprevexpr___TOP__clk__0;
         SData/*15:0*/ top_tb__DOT__led;
+        SData/*12:0*/ top_tb__DOT____Vcellinp__INST1__addra;
         SData/*11:0*/ top_tb__DOT__INST2__DOT__INST4__DOT__intimm1;
         IData/*31:0*/ top_tb__DOT__doa;
         IData/*31:0*/ top_tb__DOT__dob;
         IData/*31:0*/ top_tb__DOT__dia;
         IData/*31:0*/ top_tb__DOT__dib;
-        IData/*19:0*/ top_tb__DOT____Vcellinp__INST1__addra;
         VlWide<250>/*7999:0*/ top_tb__DOT__program_file;
         IData/*31:0*/ top_tb__DOT__RVMODEL_DATA_BEGIN;
         IData/*31:0*/ top_tb__DOT__RVMODEL_DATA_END;
@@ -76,7 +77,6 @@ class alignas(VL_CACHE_LINE_BYTES) Vtop_tb___024root final : public VerilatedMod
         IData/*31:0*/ top_tb__DOT__INST2__DOT__WB_io_data;
         IData/*31:0*/ top_tb__DOT__INST2__DOT__misa;
         IData/*31:0*/ top_tb__DOT__INST2__DOT__mtvec;
-        IData/*31:0*/ top_tb__DOT__INST2__DOT__mip;
         IData/*31:0*/ top_tb__DOT__INST2__DOT__mie;
         IData/*31:0*/ top_tb__DOT__INST2__DOT__mcounteren;
         IData/*31:0*/ top_tb__DOT__INST2__DOT__mcountinhibit;
@@ -103,7 +103,7 @@ class alignas(VL_CACHE_LINE_BYTES) Vtop_tb___024root final : public VerilatedMod
         QData/*63:0*/ top_tb__DOT__INST2__DOT__mhpmcounter4;
         QData/*63:0*/ top_tb__DOT__INST2__DOT__mtime;
         QData/*63:0*/ top_tb__DOT__INST2__DOT__mtimecmp;
-        VlUnpacked<IData/*31:0*/, 606208> top_tb__DOT__INST1__DOT__mem;
+        VlUnpacked<IData/*31:0*/, 7616> top_tb__DOT__INST1__DOT__mem;
         VlUnpacked<CData/*5:0*/, 4> top_tb__DOT__INST2__DOT__exception_code;
         VlUnpacked<CData/*5:0*/, 4> top_tb__DOT__INST2__DOT__exception_code_n;
         VlUnpacked<CData/*1:0*/, 256> top_tb__DOT__INST2__DOT__BHT;
