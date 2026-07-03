@@ -1,8 +1,8 @@
 #define RESULT_ADDR ((volatile int*)0x00006000)
-#define MCYCLE_ADDR ((volatile int*)0x00007700)
-#define MINSTRET_ADDR ((volatile int*)0x00007708)
-#define CORRECT_PREDICTIONS_ADDR ((volatile int*)0x00007710)
-#define TOTAL_PREDICTIONS_ADDR ((volatile int*)0x00007718)
+#define MCYCLE_ADDR ((volatile int*)0x00007600)
+#define MINSTRET_ADDR ((volatile int*)0x00007608)
+#define CORRECT_PREDICTIONS_ADDR ((volatile int*)0x00007610)
+#define TOTAL_PREDICTIONS_ADDR ((volatile int*)0x00007618)
 
 #define read_csr(reg) ({ unsigned long __v; \
     asm volatile ("csrr %0, " #reg : "=r"(__v)); __v; })
