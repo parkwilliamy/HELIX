@@ -7,8 +7,8 @@ module UART (
     output logic [7:0] RX_data
 );
 
-    // This module assumes a baud rate of 1Mb/s with clock of 57MHz
-    localparam MAX_COUNT = 56;
+    // Clocks per bit for 1 MBaud -- MUST equal the clk_wiz output frequency in MHz (currently 45 MHz)
+    localparam MAX_COUNT = 45;
 
     typedef enum logic[2:0] {
         IDLE = 3'b000, 
@@ -56,7 +56,7 @@ module UART (
 
                 IDLE: begin
 
-                    if (RX_negedge) baud_count <= 28; // START_RX baud counter from halfway for half baud tick
+                    if (RX_negedge) baud_count <= MAX_COUNT/2; // START_RX baud counter from halfway for half baud tick
                     else if (TX_enable && baud_tick) begin
 
                         baud_count <= 0; // Reset baud count
