@@ -175,6 +175,9 @@ module Core (
 
     ControlUnit INST2 (
         .opcode(ID_opcode),
+        .funct7(ID_funct7),
+        .rs2(ID_rs2),
+        .funct3(ID_funct3),
         .ValidReg(ID_ValidReg),
         .ALUOp(ID_ALUOp),
         .RegSrc(ID_RegSrc),
@@ -487,7 +490,7 @@ module Core (
 
         end
 
-        else if (!ID_Valid && !ID_PostFlush) begin // Illegal opcode exception -- flush bubbles decode as invalid but are not instructions
+        else if (!ID_Valid && !ID_PostFlush) begin // Illegal instruction exception -- flush bubbles decode as invalid but are not instructions
 
             exception_status_n[2] = 1;
             exception_code_n[2] = ILLEGAL_INST;

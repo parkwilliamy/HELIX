@@ -3,7 +3,9 @@
 import top_constants::*;
 
 module ControlUnit (
-    input logic [6:0] opcode,
+    input logic [6:0] opcode, funct7,
+    input logic [4:0] rs2,
+    input logic [2:0] funct3,
     output logic [2:0] ValidReg, RegSrc,
     output logic [1:0] ALUOp, ALUSrc,
     output logic RegWrite, MemRead, MemWrite, Branch, Jump, Valid, CSR
@@ -30,7 +32,6 @@ module ControlUnit (
         MemWrite = 0;
         Branch = 0;
         Jump = 0;
-        Valid = 1;
         ValidReg = 0;
         CSR = 0;
 
@@ -136,14 +137,67 @@ module ControlUnit (
                 MemWrite = 0;
                 Branch = 0;
                 Jump = 0;
-                Valid = 0;
                 ValidReg = 0;
                 CSR = 0;
 
             end
-            
+
         endcase
 
     end
+
+    // Instruction legality is decoded separately from the control signals above: one entry per
+    // legal RV32I_Zicsr encoding, default illegal. funct7/rs2 bits that are immediate fields
+    // are wildcarded. ecall/ebreak/mret/wfi also require rs1 = rd = 0, which is not checked here.
+
+    always_comb begin
+
+        casez ({funct7, rs2, funct3, opcode})
+
+            {7'b???????, 5'b?????, 3'b???, OP_U_LUI},   // lui
+            {7'b???????, 5'b?????, 3'b???, OP_U_AUIPC}, // auipc
+            {7'b???????, 5'b?????, 3'b???, OP_J},       // jal
+            {7'b???????, 5'b?????, 3'b000, OP_I_JALR},  // jalr
+            {7'b???????, 5'b?????, 3'b00?, OP_B},       // beq/bne
+            {7'b???????, 5'b?????, 3'b1??, OP_B},       // blt/bge/bltu/bgeu
+            {7'b???????, 5'b?????, 3'b000, OP_I_LD},    // lb
+            {7'b???????, 5'b?????, 3'b001, OP_I_LD},    // lh
+            {7'b???????, 5'b?????, 3'b010, OP_I_LD},    // lw
+            {7'b???????, 5'b?????, 3'b100, OP_I_LD},    // lbu
+            {7'b???????, 5'b?????, 3'b101, OP_I_LD},    // lhu
+            {7'b???????, 5'b?????, 3'b000, OP_S},       // sb
+            {7'b???????, 5'b?????, 3'b001, OP_S},       // sh
+            {7'b???????, 5'b?????, 3'b010, OP_S},       // sw
+            {7'b???????, 5'b?????, 3'b000, OP_I},       // addi
+            {7'b???????, 5'b?????, 3'b010, OP_I},       // slti
+            {7'b???????, 5'b?????, 3'b011, OP_I},       // sltiu
+            {7'b???????, 5'b?????, 3'b100, OP_I},       // xori
+            {7'b???????, 5'b?????, 3'b110, OP_I},       // ori
+            {7'b???????, 5'b?????, 3'b111, OP_I},       // andi
+            {7'b0000000, 5'b?????, 3'b001, OP_I},       // slli
+            {7'b0?00000, 5'b?????, 3'b101, OP_I},       // srli/srai
+            {7'b0000000, 5'b?????, 3'b???, OP_R},       // add/sll/slt/sltu/xor/srl/or/and
+            {7'b0100000, 5'b?????, 3'b000, OP_R},       // sub
+            {7'b0100000, 5'b?????, 3'b101, OP_R},       // sra
+            {7'b???????, 5'b?????, 3'b000, OP_I_FENCE}, // fence (fence.i excluded -- no Zifencei)
+            {7'b0000000, 5'b00000, 3'b000, OP_SYSTEM},  // ecall
+            {7'b0000000, 5'b00001, 3'b000, OP_SYSTEM},  // ebreak
+            {7'b0011000, 5'b00010, 3'b000, OP_SYSTEM},  // mret
+            {7'b0001000, 5'b00101, 3'b000, OP_SYSTEM},  // wfi
+            {7'b???????, 5'b?????, 3'b001, OP_SYSTEM},  // csrrw
+            {7'b???????, 5'b?????, 3'b010, OP_SYSTEM},  // csrrs
+            {7'b???????, 5'b?????, 3'b011, OP_SYSTEM},  // csrrc
+            {7'b???????, 5'b?????, 3'b101, OP_SYSTEM},  // csrrwi
+            {7'b???????, 5'b?????, 3'b110, OP_SYSTEM},  // csrrsi
+            {7'b???????, 5'b?????, 3'b111, OP_SYSTEM}:  // csrrci
+                Valid = 1;
+
+            default: Valid = 0;
+
+        endcase
+
+    end
+
+    
 
 endmodule
