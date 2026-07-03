@@ -8,15 +8,15 @@
     asm volatile ("csrr %0, " #reg : "=r"(__v)); __v; })
 
 static inline void write_csrs(unsigned long elapsed) {
-    *MCYCLE_ADDR = elapsed & 0xFFFFFFFF;
-    *(MCYCLE_ADDR+4) = elapsed & 0x00000000FFFFFFFF;
-    *MINSTRET_ADDR = read_csr(minstret);
-    *(MINSTRET_ADDR+4) = read_csr(minstreth);
-    *CORRECT_PREDICTIONS_ADDR = read_csr(mhpmcounter3);
-    *(CORRECT_PREDICTIONS_ADDR+4) = read_csr(mhpmcounter3h);
-    *TOTAL_PREDICTIONS_ADDR = read_csr(mhpmcounter4);
-    *(TOTAL_PREDICTIONS_ADDR+4) = read_csr(mhpmcounter4h);
-}
+      *MCYCLE_ADDR = elapsed;
+      *(MCYCLE_ADDR+1) = 0;
+      *MINSTRET_ADDR = read_csr(minstret);
+      *(MINSTRET_ADDR+1) = read_csr(minstreth);
+      *CORRECT_PREDICTIONS_ADDR = read_csr(mhpmcounter3);
+      *(CORRECT_PREDICTIONS_ADDR+1) = read_csr(mhpmcounter3h);
+      *TOTAL_PREDICTIONS_ADDR = read_csr(mhpmcounter4);
+      *(TOTAL_PREDICTIONS_ADDR+1) = read_csr(mhpmcounter4h);
+  }
 
 static inline void counter(unsigned int time) {
     while (time > 0) {time -= 1;}
