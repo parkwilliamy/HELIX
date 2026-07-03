@@ -8,8 +8,8 @@
     asm volatile ("csrr %0, " #reg : "=r"(__v)); __v; })
 
 static inline void write_csrs(unsigned long elapsed) {
-    *MCYCLE_ADDR = read_csr(mcycle);
-    *(MCYCLE_ADDR+4) = read_csr(mcycleh);
+    *MCYCLE_ADDR = elapsed & 0xFFFFFFFF;
+    *(MCYCLE_ADDR+4) = elapsed & 0x00000000FFFFFFFF;
     *MINSTRET_ADDR = read_csr(minstret);
     *(MINSTRET_ADDR+4) = read_csr(minstreth);
     *CORRECT_PREDICTIONS_ADDR = read_csr(mhpmcounter3);
