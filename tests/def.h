@@ -9,9 +9,13 @@
 
 static inline void write_csrs(unsigned long elapsed) {
     *MCYCLE_ADDR = read_csr(mcycle);
+    *(MCYCLE_ADDR+4) = read_csr(mcycleh);
     *MINSTRET_ADDR = read_csr(minstret);
+    *(MINSTRET_ADDR+4) = read_csr(minstreth);
     *CORRECT_PREDICTIONS_ADDR = read_csr(mhpmcounter3);
+    *(CORRECT_PREDICTIONS_ADDR+4) = read_csr(mhpmcounter3h);
     *TOTAL_PREDICTIONS_ADDR = read_csr(mhpmcounter4);
+    *(TOTAL_PREDICTIONS_ADDR+4) = read_csr(mhpmcounter4h);
 }
 
 static inline void counter(unsigned int time) {
