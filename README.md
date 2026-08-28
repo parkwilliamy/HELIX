@@ -1,10 +1,11 @@
 # R500
-## Features
+## Features 
 - R500 is a 32-bit processor based on the RISC-V architecture
 - R500 is 100% compliant with the RV32I ISA based on the official RISC-V compliance test suite (see below for more details)
 - R500 has an average CPI of 1.23*, branch predictor accuracy of 96.5%**, and a throughput of 46.3 million instructions per second* with a clock speed of 57MHz
 - Implemented on the Xilinx Artix-7 FPGA with 20KB of instruction memory and 12KB of data memory
 - Utilizes a 5-stage pipeline with forwarding, stalling, flushing, and global branch prediction
+- Supports precise exceptions and timer interrupts
 - Designed a 2-way set associative branch target buffer to eliminate penalties for correctly predicted branch instructions
 
 **Average CPI and throughput were calculated on the average results of loop1.c, loop2.c, loop3.c, loop4.c, loop5.c, fib.c, and mem2.c*
@@ -13,11 +14,14 @@
 
 ## Repository Structure
 ### Directories
-- rtl/ contains Verilog files
-- tb/ contains SystemVerilog testbenches (not available in main branch)
-- metric_tests/ contains the performance benchmark programs
+- rtl/ contains RTL files
+- packages/ contains RTL parameters and type definitions
+- tb/ contains testbenches
+- tests/ contains performance benchmarks and debug programs
+- scripts/tcl contains TCL scripts for Vivado's synthesis and place+route workflows
+- mk/ contains different Makefiles for simulation, synthesis, and program compilation
 ### Branches
-- main branch only has the files for the synthesized R500
+- main branch contains the RTL and testbench files for the most up-to-date version of R500
 - pipelined branch has both the files for the simulated R500 and testbenches
 - single_cycle branch has the files for the simulated single cycle R500 and testbenches (this was the original version before I pipelined the design)
 
